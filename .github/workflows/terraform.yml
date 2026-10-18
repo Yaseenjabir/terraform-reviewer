@@ -1,0 +1,23 @@
+name: Terraform Plan
+
+on: push
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the repository's code
+        uses: actions/checkout@v5
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform plan
+        working-directory: infra
+        run: terraform plan
