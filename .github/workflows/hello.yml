@@ -1,0 +1,20 @@
+name: Hello Workflow
+
+on: push
+
+jobs:
+  say-hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the repository's code
+        uses: actions/checkout@v5
+
+      - name: Say hello
+        run: echo "Hello from GitHub Actions!"
+
+      - name: Show where we are
+        run: |
+          echo "Computer: $(uname -a)"
+          echo "Current folder: $(pwd)"
+          echo "Files here:"
+          ls -la
