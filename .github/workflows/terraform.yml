@@ -32,3 +32,14 @@ jobs:
         run: |
           echo "Planned changes:"
           jq -r '.resource_changes[] | "  \(.change.actions | join("+"))  \(.address)"' plan.json
+
+      - name: Fail if anything will be deleted
+        working-directory: infra
+        run: |
+          DELETES=$(jq '[.resource_changes[] | select(.change.actions | index("delete"))] | length' plan.json)
+          echo "Resources to be deleted: $DELETES"
+          if [ "$DELETES" -gt 0 ]; then
+            echo "::error::This plan deletes $DELETES resource(s). A human must review it."
+            exit 1
+          fi
+          echo "No deletions. Looks safe."

@@ -1,0 +1,9 @@
+# Terraform working files: never commit these
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+plan.json
+
+# Files created by the local_file resources in infra/
+infra/*.txt
