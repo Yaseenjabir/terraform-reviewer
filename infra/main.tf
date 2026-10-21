@@ -12,3 +12,8 @@ resource "local_file" "notes" {
   filename = "${path.module}/notes.txt"
   content  = "My first pull request"
 }
+
+resource "local_file" "todo" {
+  filename = "${path.module}/todo.txt"
+  content  = "Learn to update PR comments"
+}
