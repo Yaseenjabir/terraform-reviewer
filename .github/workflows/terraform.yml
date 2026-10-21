@@ -5,6 +5,9 @@ on: pull_request
 jobs:
   plan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Get the repository's code
         uses: actions/checkout@v5
@@ -32,6 +35,19 @@ jobs:
         run: |
           echo "Planned changes:"
           jq -r '.resource_changes[] | "  \(.change.actions | join("+"))  \(.address)"' plan.json
+
+      - name: Comment on the pull request
+        working-directory: infra
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "### Terraform Plan"
+            echo '```'
+            jq -r '.resource_changes[] | "\(.change.actions | join("+"))  \(.address)"' plan.json
+            echo '```'
+          } > comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md --edit-last --create-if-none
 
       - name: Fail if anything will be deleted
         working-directory: infra
