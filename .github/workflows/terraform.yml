@@ -47,7 +47,7 @@ jobs:
             jq -r '.resource_changes[] | "\(.change.actions | join("+"))  \(.address)"' plan.json
             echo '```'
           } > comment.md
-          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md --edit-last --create-if-none
 
       - name: Fail if anything will be deleted
         working-directory: infra
