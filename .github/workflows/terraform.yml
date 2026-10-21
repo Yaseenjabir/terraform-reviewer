@@ -31,10 +31,9 @@ jobs:
         run: terraform show -json tfplan > plan.json
 
       - name: Summarize changes
-        working-directory: infra
-        run: |
-          echo "Planned changes:"
-          jq -r '.resource_changes[] | "  \(.change.actions | join("+"))  \(.address)"' plan.json
+        uses: ./.github/actions/plan-summary
+        with:
+          plan-file: infra/plan.json
 
       - name: Comment on the pull request
         working-directory: infra

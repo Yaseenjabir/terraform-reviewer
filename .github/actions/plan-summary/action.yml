@@ -1,0 +1,13 @@
+name: Plan Summary
+description: Prints a short summary of a Terraform plan JSON file
+
+inputs:
+  plan-file:
+    description: Path to the plan JSON file (from terraform show -json)
+    required: true
+
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - ${{ inputs.plan-file }}
