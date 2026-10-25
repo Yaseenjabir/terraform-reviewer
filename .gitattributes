@@ -1,0 +1,2 @@
+# Use LF line endings in the repo, so scripts work on Linux runners and in Docker
+* text=auto eol=lf
