@@ -4,7 +4,28 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 1 is starting. The repository has just been set up; no reviewer code exists yet.
+**Status:** Week 1 in progress. The plan parser (`tf_reviewer.plan`) and a plain-text summary with a CLI (`tf-reviewer plan.json`) exist, with tests.
+
+## Commands
+
+```bash
+python -m venv .venv                      # once
+.venv/Scripts/python -m pip install -e ".[dev]"   # Windows; on Linux/macOS use .venv/bin/
+.venv/Scripts/python -m pytest -q         # run the tests
+.venv/Scripts/tf-reviewer plan.json       # summarize a plan (from `terraform show -json <planfile>`)
+```
+
+## Code layout
+
+- `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op). Rejects non-plan input with `PlanError`.
+- `src/tf_reviewer/summary.py`: plain-text summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves).
+- `src/tf_reviewer/cli.py`: the `tf-reviewer` command; exit code 2 on unreadable input.
+- `tests/fixtures/`: real plan JSON made with `terraform_data` (see its README for how to regenerate).
+- `.github/workflows/tests.yml`: runs pytest on every PR and on `main`.
+
+## Known gaps in the parser
+
+Tested so far only on `terraform_data`/`local_file` plans and hand-made edge cases. Not yet covered by real fixtures: AWS provider plans, modules, data sources (`read`), deposed objects (the same address can appear twice), `import` blocks (`importing` field), plans with `"errored": true`, other Terraform versions and OpenTofu, and very large plans. Real-world fixtures were deferred on 2026-10-25; add them before or during the Week 5 evaluation work.
 
 ## Core design principles
 
