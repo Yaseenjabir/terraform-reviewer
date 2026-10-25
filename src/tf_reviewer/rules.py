@@ -7,6 +7,7 @@ risk level can be traced back to a rule.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import IntEnum
@@ -202,7 +203,78 @@ def open_to_internet(change: ResourceChange) -> list[Finding]:
     return findings
 
 
-RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet)
+# --- IAM policies that allow everything --------------------------------------------------
+
+# Resource types whose "policy" attribute is an IAM permissions policy (a JSON string).
+_POLICY_TYPES = frozenset({"aws_iam_policy", "aws_iam_role_policy", "aws_iam_user_policy", "aws_iam_group_policy"})
+
+
+def _as_list(value: object) -> list:
+    """IAM fields can be a single value or a list; always return a list."""
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
+def _policy_documents(resource_type: str, values: dict | None) -> list[str]:
+    """The policy JSON strings in a resource's values."""
+    if not values:
+        return []
+    if resource_type in _POLICY_TYPES:
+        return [values.get("policy")]
+    if resource_type == "aws_iam_role":
+        return [block.get("policy") for block in values.get("inline_policy") or []]
+    return []
+
+
+def _wildcard_grants(resource_type: str, values: dict | None) -> set[tuple[str, bool]]:
+    """Each wildcard action an Allow statement grants, with whether it applies to every resource."""
+    grants = set()
+    for document in _policy_documents(resource_type, values):
+        if not isinstance(document, str):
+            continue  # unknown until apply
+        try:
+            policy = json.loads(document)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(policy, dict):
+            continue
+        for statement in _as_list(policy.get("Statement")):
+            if not isinstance(statement, dict) or statement.get("Effect") != "Allow":
+                continue
+            every_resource = "*" in _as_list(statement.get("Resource"))
+            for action in _as_list(statement.get("Action")):
+                if action in ("*", "*:*"):
+                    grants.add(("*", every_resource))
+                elif isinstance(action, str) and action.endswith(":*"):
+                    grants.add((action.lower(), every_resource))
+    return grants
+
+
+def iam_wildcard(change: ResourceChange) -> list[Finding]:
+    """An IAM policy newly allows every action, or every action of a service.
+
+    Allowing "*" or "iam:*" is HIGH (iam:* lets the holder grant itself anything);
+    any other "service:*" is MEDIUM. Only grants this change adds are reported.
+    """
+    added = _wildcard_grants(change.type, change.after) - _wildcard_grants(change.type, change.before)
+    findings = []
+    for action, every_resource in sorted(added):
+        where = 'on every resource ("*")' if every_resource else "on specific resources"
+        if action == "*":
+            risk, what = Risk.HIGH, f'every action ("*") {where}'
+        elif action == "iam:*":
+            risk, what = Risk.HIGH, f'all IAM actions ("iam:*") {where}, so it can grant itself any permission'
+        else:
+            service = action.split(":")[0]
+            risk, what = Risk.MEDIUM, f'all {service} actions ("{action}") {where}'
+        findings.append(
+            Finding(rule_id="iam-wildcard", risk=risk, address=change.address, message=f"{change.address} allows {what}.")
+        )
+    return findings
+
+
+RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet, iam_wildcard)
 
 
 def evaluate(changes: Iterable[ResourceChange], rules: Iterable[Rule] = RULES) -> list[Finding]:

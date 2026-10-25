@@ -1,9 +1,19 @@
+import json
 from pathlib import Path
 
 import pytest
 
 from tf_reviewer.plan import Action, ResourceChange, load_plan
-from tf_reviewer.rules import Finding, Risk, data_loss, evaluate, open_to_internet, overall_risk, resource_removed
+from tf_reviewer.rules import (
+    Finding,
+    Risk,
+    data_loss,
+    evaluate,
+    iam_wildcard,
+    open_to_internet,
+    overall_risk,
+    resource_removed,
+)
 from tf_reviewer.summary import format_findings
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -204,3 +214,83 @@ def test_missing_ipv6_list_is_handled():
 
 def test_deleting_a_group_opens_nothing():
     assert open_to_internet(change("aws_security_group.web", Action.DELETE, before=sg(tcp(22)), after=None)) == []
+
+
+# --- iam-wildcard ------------------------------------------------------------------------
+
+
+def policy(*statements: dict) -> dict:
+    """Values of an aws_iam_policy whose policy is the given statements, as Terraform stores it."""
+    return {"name": "p", "policy": json.dumps({"Version": "2012-10-17", "Statement": list(statements)})}
+
+
+def allow(action, resource="*") -> dict:
+    return {"Effect": "Allow", "Action": action, "Resource": resource}
+
+
+def granted(before: dict | None, after: dict | None, address: str = "aws_iam_policy.p") -> list[tuple[str, str]]:
+    action = Action.CREATE if before is None else Action.UPDATE
+    findings = iam_wildcard(change(address, action, before=before, after=after))
+    return [(f.risk.name, f.message) for f in findings]
+
+
+def test_iam_fixture():
+    findings = [f for f in evaluate(load_plan(FIXTURES / "iam_wildcards.json")) if f.rule_id == "iam-wildcard"]
+    assert [(f.address, f.risk) for f in findings] == [
+        ("aws_iam_policy.admin", Risk.HIGH),
+        ("aws_iam_role_policy.iam_admin", Risk.HIGH),
+        ("aws_iam_policy.s3_everything", Risk.MEDIUM),
+        ("aws_iam_role.app", Risk.MEDIUM),
+    ]
+
+
+def test_every_action():
+    assert granted(None, policy(allow("*"))) == [
+        ("HIGH", 'aws_iam_policy.p allows every action ("*") on every resource ("*").'),
+    ]
+
+
+def test_every_action_written_as_star_colon_star():
+    assert granted(None, policy(allow(["*:*"])))[0][0] == "HIGH"
+
+
+def test_service_wildcard_on_specific_resources():
+    assert granted(None, policy(allow("s3:*", "arn:aws:s3:::reports/*"))) == [
+        ("MEDIUM", 'aws_iam_policy.p allows all s3 actions ("s3:*") on specific resources.'),
+    ]
+
+
+def test_iam_star_is_high():
+    assert granted(None, policy(allow("IAM:*")))[0][0] == "HIGH"
+
+
+def test_statement_as_single_object():
+    values = {"policy": json.dumps({"Statement": allow("*")})}
+    assert granted(None, values)[0][0] == "HIGH"
+
+
+def test_narrow_actions_are_fine():
+    assert granted(None, policy(allow(["s3:GetObject", "s3:Get*"]))) == []
+
+
+def test_deny_is_fine():
+    assert granted(None, policy({"Effect": "Deny", "Action": "*", "Resource": "*"})) == []
+
+
+def test_existing_wildcard_is_not_this_changes_fault():
+    assert granted(policy(allow("*")), policy(allow("*"), allow("s3:GetObject"))) == []
+
+
+def test_policy_unknown_until_apply_is_skipped():
+    assert granted(None, {"name": "p", "policy": None}) == []
+
+
+def test_invalid_policy_json_is_skipped():
+    assert granted(None, {"name": "p", "policy": "{not json"}) == []
+
+
+def test_role_inline_policy():
+    role = {"name": "app", "inline_policy": [{"name": "x", "policy": json.dumps({"Statement": [allow("ec2:*")]})}]}
+    assert granted(None, role, address="aws_iam_role.app") == [
+        ("MEDIUM", 'aws_iam_role.app allows all ec2 actions ("ec2:*") on every resource ("*").'),
+    ]
