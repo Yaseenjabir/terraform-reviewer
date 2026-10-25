@@ -274,7 +274,64 @@ def iam_wildcard(change: ResourceChange) -> list[Finding]:
     return findings
 
 
-RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet, iam_wildcard)
+# AWS managed policies that grant (nearly) everything, with what they grant and their risk.
+BROAD_MANAGED_POLICIES = {
+    "AdministratorAccess": (Risk.HIGH, "full administrator access"),
+    "IAMFullAccess": (Risk.HIGH, "every IAM action, so it can grant itself any permission"),
+    "PowerUserAccess": (Risk.MEDIUM, "every action except most of IAM"),
+}
+
+# Resource types that attach managed policies, and the attribute holding the policy ARN(s).
+_ATTACHMENT_ATTRIBUTES = {
+    "aws_iam_role_policy_attachment": "policy_arn",
+    "aws_iam_user_policy_attachment": "policy_arn",
+    "aws_iam_group_policy_attachment": "policy_arn",
+    "aws_iam_policy_attachment": "policy_arn",
+    "aws_iam_role": "managed_policy_arns",
+}
+
+
+def _managed_policy_name(arn: object) -> str | None:
+    """The name of an AWS managed policy ARN (account field "aws"), or None for anything else.
+
+    arn:aws:iam::aws:policy/AdministratorAccess -> "AdministratorAccess"
+    arn:aws:iam::123456789012:policy/AdministratorAccess -> None (a customer policy with that name)
+    """
+    if not isinstance(arn, str):
+        return None
+    parts = arn.split(":", 5)
+    if len(parts) != 6 or parts[2] != "iam" or parts[4] != "aws" or not parts[5].startswith("policy/"):
+        return None
+    return parts[5].rsplit("/", 1)[-1]
+
+
+def _broad_policies(resource_type: str, values: dict | None) -> set[str]:
+    """Names of the broad AWS managed policies a resource attaches."""
+    attribute = _ATTACHMENT_ATTRIBUTES.get(resource_type)
+    if not values or attribute is None:
+        return set()
+    names = {_managed_policy_name(arn) for arn in _as_list(values.get(attribute))}
+    return names & BROAD_MANAGED_POLICIES.keys()
+
+
+def admin_policy_attached(change: ResourceChange) -> list[Finding]:
+    """A broad AWS managed policy such as AdministratorAccess is newly attached."""
+    added = _broad_policies(change.type, change.after) - _broad_policies(change.type, change.before)
+    findings = []
+    for name in sorted(added):
+        risk, grants = BROAD_MANAGED_POLICIES[name]
+        findings.append(
+            Finding(
+                rule_id="admin-policy-attached",
+                risk=risk,
+                address=change.address,
+                message=f"{change.address} attaches the AWS managed policy {name} ({grants}).",
+            )
+        )
+    return findings
+
+
+RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet, iam_wildcard, admin_policy_attached)
 
 
 def evaluate(changes: Iterable[ResourceChange], rules: Iterable[Rule] = RULES) -> list[Finding]:

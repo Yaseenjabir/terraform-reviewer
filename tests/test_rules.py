@@ -7,6 +7,7 @@ from tf_reviewer.plan import Action, ResourceChange, load_plan
 from tf_reviewer.rules import (
     Finding,
     Risk,
+    admin_policy_attached,
     data_loss,
     evaluate,
     iam_wildcard,
@@ -294,3 +295,57 @@ def test_role_inline_policy():
     assert granted(None, role, address="aws_iam_role.app") == [
         ("MEDIUM", 'aws_iam_role.app allows all ec2 actions ("ec2:*") on every resource ("*").'),
     ]
+
+
+# --- admin-policy-attached ---------------------------------------------------------------
+
+ADMIN = "arn:aws:iam::aws:policy/AdministratorAccess"
+
+
+def attached(before, after, address="aws_iam_role_policy_attachment.a") -> list[tuple[str, str]]:
+    action = Action.CREATE if before is None else Action.UPDATE
+    findings = admin_policy_attached(change(address, action, before=before, after=after))
+    return [(f.risk.name, f.message) for f in findings]
+
+
+def test_attachments_fixture():
+    findings = [f for f in evaluate(load_plan(FIXTURES / "iam_attachments.json")) if f.rule_id == "admin-policy-attached"]
+    assert [(f.address, f.risk) for f in findings] == [
+        ("aws_iam_policy_attachment.admins", Risk.HIGH),
+        ("aws_iam_role_policy_attachment.admin", Risk.HIGH),
+        ("aws_iam_user_policy_attachment.iam_full", Risk.HIGH),
+        ("aws_iam_group_policy_attachment.power_user", Risk.MEDIUM),
+    ]
+
+
+def test_administrator_access():
+    assert attached(None, {"role": "app", "policy_arn": ADMIN}) == [
+        ("HIGH", "aws_iam_role_policy_attachment.a attaches the AWS managed policy "
+                 "AdministratorAccess (full administrator access)."),
+    ]
+
+
+def test_customer_policy_with_the_same_name_is_ignored():
+    assert attached(None, {"policy_arn": "arn:aws:iam::123456789012:policy/AdministratorAccess"}) == []
+
+
+def test_other_partitions():
+    assert attached(None, {"policy_arn": "arn:aws-us-gov:iam::aws:policy/AdministratorAccess"})[0][0] == "HIGH"
+
+
+def test_narrow_managed_policy_is_fine():
+    assert attached(None, {"policy_arn": "arn:aws:iam::aws:policy/ReadOnlyAccess"}) == []
+
+
+def test_role_managed_policy_arns_list():
+    role = {"name": "app", "managed_policy_arns": ["arn:aws:iam::aws:policy/ReadOnlyAccess", ADMIN]}
+    assert [r for r, _ in attached(None, role, address="aws_iam_role.app")] == ["HIGH"]
+
+
+def test_already_attached_is_not_this_changes_fault():
+    role = {"name": "app", "managed_policy_arns": [ADMIN]}
+    assert attached(role, {**role, "description": "changed"}, address="aws_iam_role.app") == []
+
+
+def test_policy_arn_unknown_until_apply():
+    assert attached(None, {"role": "app", "policy_arn": None}) == []

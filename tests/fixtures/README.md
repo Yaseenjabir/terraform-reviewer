@@ -74,3 +74,16 @@ A create-only AWS plan with IAM policies, made offline the same way as `open_por
 | `aws_iam_role.app` | inline policy block, `"ec2:*"` on `"*"` | MEDIUM |
 | `aws_iam_policy.read_one_bucket` | `s3:GetObject` on one bucket | nothing |
 | `aws_iam_policy.deny_everything` | `Deny` `"*"` | nothing |
+
+## `iam_attachments.json`
+
+A create-only AWS plan attaching managed policies, made offline the same way.
+
+| Address | Attaches | Expected |
+| --- | --- | --- |
+| `aws_iam_role_policy_attachment.admin` | `arn:aws:iam::aws:policy/AdministratorAccess` | HIGH |
+| `aws_iam_policy_attachment.admins` | `AdministratorAccess` (to a list of roles) | HIGH |
+| `aws_iam_user_policy_attachment.iam_full` | `IAMFullAccess` | HIGH |
+| `aws_iam_group_policy_attachment.power_user` | `PowerUserAccess` | MEDIUM |
+| `aws_iam_role_policy_attachment.read_only` | `ReadOnlyAccess` | nothing |
+| `aws_iam_role_policy_attachment.own_policy` | a customer policy that happens to be named `AdministratorAccess` | nothing |
