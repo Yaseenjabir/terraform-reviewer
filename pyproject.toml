@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Reviews Terraform plans for risky changes and explains them in plain English"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["PyYAML>=6"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]

@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine has six rules plus Checkov integration. Still to do in Week 2: the `.tf-reviewer.yml` config file.
+**Status:** Week 2 is complete once the config-file PR is merged: plan parser, six rules, Infracost and Checkov integration, and `.tf-reviewer.yml`. Next is Week 3 (LLM explanations, secret redaction, PR comment format).
 
 ## Commands
 
@@ -14,6 +14,7 @@ python -m venv .venv                      # once
 .venv/Scripts/python -m pytest -q         # run the tests
 .venv/Scripts/tf-reviewer plan.json       # review a plan (from `terraform show -json <planfile>`)
 .venv/Scripts/tf-reviewer plan.json --cost-diff infracost.json --cost-threshold 50 --checkov checkov.json
+.venv/Scripts/tf-reviewer plan.json --config team.yml   # default: .tf-reviewer.yml in the current directory
 ```
 
 The inputs come from:
@@ -29,18 +30,19 @@ checkov -f plan.json --framework terraform_plan -o json > checkov.json
 - `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op), plus `before`/`after` attribute values (excluded from repr and hash). Rejects non-plan input with `PlanError`.
 - `src/tf_reviewer/cost.py`: reads an Infracost diff (`infracost diff --format json`) into a `CostDiff` (currency, monthly before/after, per-resource changes). Amounts are `Decimal`, because Infracost writes them as strings. Only cost figures are kept: in CI the file's metadata includes the commit author's name and email. Rejects other input with `CostDiffError`.
 - `src/tf_reviewer/checkov.py`: reads Checkov JSON output (one report or a list of reports) into `CheckovFailure`s (check ID, name, resource address, guideline). Checkov's output also contains absolute file paths and code blocks; never put those in a PR comment. Rejects other input with `CheckovError`.
-- `src/tf_reviewer/rules.py`: the rule engine. A per-resource rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate(changes, cost=..., cost_threshold=...)` runs all `RULES` (plus the cost rule if a cost diff is given) and sorts riskiest first; `overall_risk()` returns the highest. The rules:
-  - `data-loss` (HIGH): a type in `STATEFUL_TYPES` is deleted or replaced.
+- `src/tf_reviewer/config.py`: settings from `.tf-reviewer.yml` (YAML, read with PyYAML's `safe_load`, the only runtime dependency) or the defaults. `Config` holds `cost_threshold`, `disabled_rules`, `stateful_types`, `sensitive_ports`, `web_ports` and `skipped_checkov_checks`; the defaults (`DEFAULT_STATEFUL_TYPES`, `DEFAULT_SENSITIVE_PORTS`, `DEFAULT_WEB_PORTS`, `DEFAULT_COST_THRESHOLD`) live here. Lists support `add`/`remove` so teams don't copy the defaults. Unknown settings, unknown rule IDs, bad ports and bad amounts raise `ConfigError` naming the file and setting, because a misspelt setting that silently does nothing is dangerous. `RULE_IDS` must list every rule ID (a test checks it). `.tf-reviewer.example.yml` documents every setting.
+- `src/tf_reviewer/rules.py`: the rule engine. A per-resource rule is a function `(ResourceChange, Config) -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate(changes, config=..., cost=..., checkov=...)` runs all `RULES` (plus the cost and Checkov rules if their input is given), drops rules the config disables, and sorts riskiest first; `overall_risk()` returns the highest. The rules:
+  - `data-loss` (HIGH): a type in `config.stateful_types` is deleted or replaced.
   - `resource-removed` (MEDIUM): any other delete or replace.
-  - `open-to-internet`: HIGH for all ports or a port in `SENSITIVE_PORTS`, MEDIUM for other non-web ports. Covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`. Ignores ICMP, egress and ports 80/443.
+  - `open-to-internet`: HIGH for all ports or a port in `config.sensitive_ports`, MEDIUM for other ports not in `config.web_ports`. Covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`. Ignores ICMP, egress and ports 80/443.
   - `iam-wildcard`: Allow statements granting `"*"`/`"*:*"` or `"iam:*"` are HIGH, any other `"service:*"` is MEDIUM. Reads the `policy` JSON string of `aws_iam_policy`, `aws_iam_role_policy`, `aws_iam_user_policy`, `aws_iam_group_policy` and `aws_iam_role` `inline_policy` blocks. `Statement`, `Action` and `Resource` may each be a single value or a list.
   - `admin-policy-attached`: a broad AWS managed policy in `BROAD_MANAGED_POLICIES` is newly attached (`AdministratorAccess`, `IAMFullAccess` HIGH; `PowerUserAccess` MEDIUM). Reads `policy_arn` on the four attachment resources and `managed_policy_arns` on `aws_iam_role`. Only ARNs whose account field is `aws` count, in any partition.
-  - `cost-increase` (MEDIUM, whole plan): monthly cost rises by at least the threshold (default `DEFAULT_COST_THRESHOLD` = 50); names the biggest-increase resource.
-  - `checkov` (from Checkov results, via `checkov_findings()`): only failures on resources the plan creates, updates or replaces; checks in `COVERED_BY_OWN_RULES` are dropped (confirmed by scanning the fixtures); checks in `IMPORTANT_CHECKS` get one finding per resource at the highest of their risks (Checkov's `severity` is always null without a paid Prisma Cloud account); all other failures are collapsed into one LOW finding listing their IDs.
+  - `cost-increase` (MEDIUM, whole plan): monthly cost rises by at least `config.cost_threshold` (default 50); names the biggest-increase resource.
+  - `checkov` (from Checkov results, via `checkov_findings()`): only failures on resources the plan creates, updates or replaces; checks in `COVERED_BY_OWN_RULES` (confirmed by scanning the fixtures) or `config.skipped_checkov_checks` are dropped; checks in `IMPORTANT_CHECKS` get one finding per resource at the highest of their risks (Checkov's `severity` is always null without a paid Prisma Cloud account); all other failures are collapsed into one LOW finding listing their IDs.
   - The security and IAM rules report only what the change adds (present in `after`, absent from `before`).
-  - `STATEFUL_TYPES`, `SENSITIVE_PORTS`, `WEB_PORTS`, `BROAD_MANAGED_POLICIES` and the cost threshold should become configurable in `.tf-reviewer.yml`.
+  - Not configurable yet: `BROAD_MANAGED_POLICIES`, `IMPORTANT_CHECKS`, and the environment (dev/prod) a plan is for, which should raise risk for production.
 - `src/tf_reviewer/summary.py`: plain-text output: plan summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), `format_cost()` and `format_findings()`. The reviewer's own text is ASCII; text from Terraform or Infracost can contain any Unicode (e.g. `→`).
-- `src/tf_reviewer/cli.py`: the `tf-reviewer` command (`--cost-diff`, `--cost-threshold`, `--checkov`). Writes UTF-8 to stdout/stderr, because legacy Windows console encodings can't print characters like `→`. Exit code 2 on unreadable input.
+- `src/tf_reviewer/cli.py`: the `tf-reviewer` command (`--config`, `--cost-diff`, `--cost-threshold`, `--checkov`). Picks up `.tf-reviewer.yml` from the current directory automatically and says so in the output; `--cost-threshold` overrides the config. Writes UTF-8 to stdout/stderr, because legacy Windows console encodings can't print characters like `→`. Exit code 2 on unreadable input.
 - `tests/fixtures/`: real plan and Infracost JSON (see its README for how each was made).
 - `.github/workflows/tests.yml`: runs pytest on every PR and on `main`.
 

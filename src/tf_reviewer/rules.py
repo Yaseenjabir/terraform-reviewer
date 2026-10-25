@@ -1,8 +1,8 @@
 """Rules that look at each resource change and report risky ones as findings.
 
-Rules are plain functions: they take one ResourceChange and return a list of Findings
-(empty if the change is fine). Every finding names the rule that produced it, so each
-risk level can be traced back to a rule.
+Rules are plain functions: they take one ResourceChange (and the settings in a Config) and
+return a list of Findings (empty if the change is fine). Every finding names the rule that
+produced it, so each risk level can be traced back to a rule.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from decimal import Decimal
 from enum import IntEnum
 
 from tf_reviewer.checkov import CheckovFailure
+from tf_reviewer.config import DEFAULT_CONFIG, DEFAULT_COST_THRESHOLD, Config
 from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
 
@@ -36,31 +37,7 @@ class Finding:
     message: str
 
 
-Rule = Callable[[ResourceChange], list[Finding]]
-
-# Resource types that store data. Deleting or replacing one loses that data unless it's backed up.
-STATEFUL_TYPES = frozenset(
-    {
-        "aws_db_instance",
-        "aws_rds_cluster",
-        "aws_docdb_cluster",
-        "aws_neptune_cluster",
-        "aws_redshift_cluster",
-        "aws_dynamodb_table",
-        "aws_s3_bucket",
-        "aws_ebs_volume",
-        "aws_efs_file_system",
-        "aws_fsx_lustre_file_system",
-        "aws_elasticache_cluster",
-        "aws_elasticache_replication_group",
-        "aws_opensearch_domain",
-        "aws_elasticsearch_domain",
-        "aws_kinesis_stream",
-        "aws_sqs_queue",
-        "aws_secretsmanager_secret",
-        "aws_kms_key",
-    }
-)
+Rule = Callable[[ResourceChange, Config], list[Finding]]
 
 _REMOVING = (Action.DELETE, Action.REPLACE)
 
@@ -74,9 +51,9 @@ def _what_happens(change: ResourceChange) -> str:
     return "will be replaced"
 
 
-def data_loss(change: ResourceChange) -> list[Finding]:
-    """A resource that stores data is deleted or replaced."""
-    if change.action not in _REMOVING or change.type not in STATEFUL_TYPES:
+def data_loss(change: ResourceChange, config: Config = DEFAULT_CONFIG) -> list[Finding]:
+    """A resource that stores data (config.stateful_types) is deleted or replaced."""
+    if change.action not in _REMOVING or change.type not in config.stateful_types:
         return []
     return [
         Finding(
@@ -88,9 +65,9 @@ def data_loss(change: ResourceChange) -> list[Finding]:
     ]
 
 
-def resource_removed(change: ResourceChange) -> list[Finding]:
+def resource_removed(change: ResourceChange, config: Config = DEFAULT_CONFIG) -> list[Finding]:
     """Any other resource is deleted or replaced."""
-    if change.action not in _REMOVING or change.type in STATEFUL_TYPES:
+    if change.action not in _REMOVING or change.type in config.stateful_types:
         return []
     return [
         Finding(
@@ -105,21 +82,6 @@ def resource_removed(change: ResourceChange) -> list[Finding]:
 # --- Ports opened to the internet -------------------------------------------------------
 
 WORLD = frozenset({"0.0.0.0/0", "::/0"})
-
-# Ports that should never be reachable from the whole internet.
-SENSITIVE_PORTS = {
-    22: "SSH",
-    3389: "RDP",
-    3306: "MySQL",
-    5432: "PostgreSQL",
-    1433: "SQL Server",
-    27017: "MongoDB",
-    6379: "Redis",
-    9200: "Elasticsearch",
-}
-
-# Ports meant to be public (websites).
-WEB_PORTS = frozenset({80, 443})
 
 _ALL_PROTOCOLS = frozenset({"-1", "all"})
 _PORTLESS_PROTOCOLS = frozenset({"icmp", "icmpv6", "1", "58"})
@@ -168,22 +130,24 @@ def _openings(resource_type: str, values: dict | None) -> set[_Opening]:
     return openings
 
 
-def _assess(opening: _Opening) -> tuple[Risk, str] | None:
+def _assess(opening: _Opening, config: Config) -> tuple[Risk, str] | None:
     """How risky an opening is, and what it opens; None if it's harmless."""
     if opening.protocol in _PORTLESS_PROTOCOLS:
         return None
     low, high = opening.from_port, opening.to_port
     if opening.protocol in _ALL_PROTOCOLS or low is None or high is None or (low <= 0 and high >= 65535):
         return Risk.HIGH, "all ports"
-    sensitive = [f"{name} (port {port})" for port, name in SENSITIVE_PORTS.items() if low <= port <= high]
+    sensitive = [
+        f"{name} (port {port})" for port, name in sorted(config.sensitive_ports.items()) if low <= port <= high
+    ]
     if sensitive:
         return Risk.HIGH, ", ".join(sensitive)
-    if low == high and low in WEB_PORTS:
+    if low == high and low in config.web_ports:
         return None
     return Risk.MEDIUM, f"port {low}" if low == high else f"ports {low}-{high}"
 
 
-def open_to_internet(change: ResourceChange) -> list[Finding]:
+def open_to_internet(change: ResourceChange, config: Config = DEFAULT_CONFIG) -> list[Finding]:
     """A security group rule newly lets the whole internet reach a non-web port.
 
     Only openings this change adds are reported; ones that already existed are not its fault.
@@ -191,7 +155,7 @@ def open_to_internet(change: ResourceChange) -> list[Finding]:
     added = _openings(change.type, change.after) - _openings(change.type, change.before)
     findings = []
     for opening in sorted(added, key=lambda o: (o.from_port or 0, o.cidr, o.protocol)):
-        assessed = _assess(opening)
+        assessed = _assess(opening, config)
         if assessed is None:
             continue
         risk, what = assessed
@@ -254,7 +218,7 @@ def _wildcard_grants(resource_type: str, values: dict | None) -> set[tuple[str, 
     return grants
 
 
-def iam_wildcard(change: ResourceChange) -> list[Finding]:
+def iam_wildcard(change: ResourceChange, config: Config = DEFAULT_CONFIG) -> list[Finding]:
     """An IAM policy newly allows every action, or every action of a service.
 
     Allowing "*" or "iam:*" is HIGH (iam:* lets the holder grant itself anything);
@@ -317,7 +281,7 @@ def _broad_policies(resource_type: str, values: dict | None) -> set[str]:
     return names & BROAD_MANAGED_POLICIES.keys()
 
 
-def admin_policy_attached(change: ResourceChange) -> list[Finding]:
+def admin_policy_attached(change: ResourceChange, config: Config = DEFAULT_CONFIG) -> list[Finding]:
     """A broad AWS managed policy such as AdministratorAccess is newly attached."""
     added = _broad_policies(change.type, change.after) - _broad_policies(change.type, change.before)
     findings = []
@@ -338,9 +302,6 @@ RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet, iam_wi
 
 
 # --- Cost (a whole-plan rule, using the Infracost diff) -----------------------------------
-
-DEFAULT_COST_THRESHOLD = Decimal(50)
-
 
 def cost_increase(cost: CostDiff, threshold: Decimal = DEFAULT_COST_THRESHOLD) -> list[Finding]:
     """The monthly cost rises by at least the threshold."""
@@ -410,16 +371,21 @@ COVERED_BY_OWN_RULES = frozenset(
 _MAX_LISTED_IDS = 8
 
 
-def checkov_findings(failures: Iterable[CheckovFailure], changes: Iterable[ResourceChange]) -> list[Finding]:
+def checkov_findings(
+    failures: Iterable[CheckovFailure],
+    changes: Iterable[ResourceChange],
+    config: Config = DEFAULT_CONFIG,
+) -> list[Finding]:
     """Turn Checkov failures into findings, keeping the noise down.
 
     - Only resources this plan creates, updates or replaces count; the rest aren't this change's fault.
-    - Checks the reviewer's own rules already cover are dropped.
+    - Checks the reviewer's own rules already cover, and checks the config skips, are dropped.
     - Important checks get one finding per resource, at the highest risk among them.
     - Everything else is collapsed into a single LOW finding.
     """
     changed = {change.address for change in changes if change.is_change}
-    relevant = [f for f in failures if f.address in changed and f.check_id not in COVERED_BY_OWN_RULES]
+    dropped = COVERED_BY_OWN_RULES | config.skipped_checkov_checks
+    relevant = [f for f in failures if f.address in changed and f.check_id not in dropped]
 
     important: dict[str, list[CheckovFailure]] = {}
     others: list[CheckovFailure] = []
@@ -455,21 +421,22 @@ def evaluate(
     changes: Iterable[ResourceChange],
     rules: Iterable[Rule] = RULES,
     *,
+    config: Config = DEFAULT_CONFIG,
     cost: CostDiff | None = None,
-    cost_threshold: Decimal = DEFAULT_COST_THRESHOLD,
     checkov: Iterable[CheckovFailure] | None = None,
 ) -> list[Finding]:
     """Run every rule on every change, plus the cost and Checkov rules if their input is given.
 
-    Riskiest findings first, then by address.
+    Rules the config disables are left out. Riskiest findings first, then by address.
     """
     changes = list(changes)
     rules = tuple(rules)
-    findings = [finding for change in changes for rule in rules for finding in rule(change)]
+    findings = [finding for change in changes for rule in rules for finding in rule(change, config)]
     if cost is not None:
-        findings += cost_increase(cost, cost_threshold)
+        findings += cost_increase(cost, config.cost_threshold)
     if checkov is not None:
-        findings += checkov_findings(checkov, changes)
+        findings += checkov_findings(checkov, changes, config)
+    findings = [f for f in findings if f.rule_id not in config.disabled_rules]
     return sorted(findings, key=lambda f: (-f.risk, f.address, f.rule_id))
 
 
