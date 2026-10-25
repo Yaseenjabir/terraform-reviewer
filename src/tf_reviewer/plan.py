@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -50,6 +50,10 @@ class ResourceChange:
     previous_address: str | None = None
     action_reason: str | None = None
     replace_paths: tuple[tuple[str | int, ...], ...] = ()
+    # The resource's attribute values before and after the change (None when it doesn't exist).
+    # Left out of repr and hash: they can be large, and dictionaries can't be hashed.
+    before: dict[str, Any] | None = field(default=None, repr=False, hash=False)
+    after: dict[str, Any] | None = field(default=None, repr=False, hash=False)
 
     @property
     def is_change(self) -> bool:
@@ -98,6 +102,8 @@ def parse_plan(plan: dict[str, Any]) -> list[ResourceChange]:
                 previous_address=entry.get("previous_address"),
                 action_reason=entry.get("action_reason"),
                 replace_paths=tuple(tuple(path) for path in entry["change"].get("replace_paths") or ()),
+                before=entry["change"].get("before"),
+                after=entry["change"].get("after"),
             )
         )
     return changes

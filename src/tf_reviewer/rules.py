@@ -98,7 +98,111 @@ def resource_removed(change: ResourceChange) -> list[Finding]:
     ]
 
 
-RULES: tuple[Rule, ...] = (data_loss, resource_removed)
+# --- Ports opened to the internet -------------------------------------------------------
+
+WORLD = frozenset({"0.0.0.0/0", "::/0"})
+
+# Ports that should never be reachable from the whole internet.
+SENSITIVE_PORTS = {
+    22: "SSH",
+    3389: "RDP",
+    3306: "MySQL",
+    5432: "PostgreSQL",
+    1433: "SQL Server",
+    27017: "MongoDB",
+    6379: "Redis",
+    9200: "Elasticsearch",
+}
+
+# Ports meant to be public (websites).
+WEB_PORTS = frozenset({80, 443})
+
+_ALL_PROTOCOLS = frozenset({"-1", "all"})
+_PORTLESS_PROTOCOLS = frozenset({"icmp", "icmpv6", "1", "58"})
+
+
+@dataclass(frozen=True)
+class _Opening:
+    """One inbound rule that lets the whole internet in."""
+
+    protocol: str
+    from_port: int | None
+    to_port: int | None
+    cidr: str
+
+
+def _inbound_rules(resource_type: str, values: dict | None) -> list[tuple[dict, str]]:
+    """The inbound rules in a resource's values, each with the key that holds its protocol.
+
+    Security group rules come in three Terraform styles, and all of them must be checked.
+    """
+    if not values:
+        return []
+    if resource_type == "aws_security_group":
+        return [(rule, "protocol") for rule in values.get("ingress") or []]
+    if resource_type == "aws_security_group_rule" and values.get("type") == "ingress":
+        return [(values, "protocol")]
+    if resource_type == "aws_vpc_security_group_ingress_rule":
+        return [(values, "ip_protocol")]
+    return []
+
+
+def _openings(resource_type: str, values: dict | None) -> set[_Opening]:
+    """Every (protocol, ports, range) that admits traffic from the whole internet."""
+    openings = set()
+    for rule, protocol_key in _inbound_rules(resource_type, values):
+        ranges = [
+            *(rule.get("cidr_blocks") or []),
+            *(rule.get("ipv6_cidr_blocks") or []),
+            rule.get("cidr_ipv4"),
+            rule.get("cidr_ipv6"),
+        ]
+        for cidr in ranges:
+            if cidr in WORLD:
+                protocol = str(rule.get(protocol_key)).lower()
+                openings.add(_Opening(protocol, rule.get("from_port"), rule.get("to_port"), cidr))
+    return openings
+
+
+def _assess(opening: _Opening) -> tuple[Risk, str] | None:
+    """How risky an opening is, and what it opens; None if it's harmless."""
+    if opening.protocol in _PORTLESS_PROTOCOLS:
+        return None
+    low, high = opening.from_port, opening.to_port
+    if opening.protocol in _ALL_PROTOCOLS or low is None or high is None or (low <= 0 and high >= 65535):
+        return Risk.HIGH, "all ports"
+    sensitive = [f"{name} (port {port})" for port, name in SENSITIVE_PORTS.items() if low <= port <= high]
+    if sensitive:
+        return Risk.HIGH, ", ".join(sensitive)
+    if low == high and low in WEB_PORTS:
+        return None
+    return Risk.MEDIUM, f"port {low}" if low == high else f"ports {low}-{high}"
+
+
+def open_to_internet(change: ResourceChange) -> list[Finding]:
+    """A security group rule newly lets the whole internet reach a non-web port.
+
+    Only openings this change adds are reported; ones that already existed are not its fault.
+    """
+    added = _openings(change.type, change.after) - _openings(change.type, change.before)
+    findings = []
+    for opening in sorted(added, key=lambda o: (o.from_port or 0, o.cidr, o.protocol)):
+        assessed = _assess(opening)
+        if assessed is None:
+            continue
+        risk, what = assessed
+        findings.append(
+            Finding(
+                rule_id="open-to-internet",
+                risk=risk,
+                address=change.address,
+                message=f"{change.address} opens {what} to the whole internet ({opening.cidr}).",
+            )
+        )
+    return findings
+
+
+RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet)
 
 
 def evaluate(changes: Iterable[ResourceChange], rules: Iterable[Rule] = RULES) -> list[Finding]:
