@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine exists with two rules (`data-loss`, `resource-removed`).
+**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine exists with three rules (`data-loss`, `resource-removed`, `open-to-internet`).
 
 ## Commands
 
@@ -18,7 +18,8 @@ python -m venv .venv                      # once
 ## Code layout
 
 - `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op). Rejects non-plan input with `PlanError`.
-- `src/tf_reviewer/rules.py`: the rule engine. A rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate()` runs all `RULES` and sorts riskiest first; `overall_risk()` returns the highest. Rules so far: `data-loss` (HIGH: a type in `STATEFUL_TYPES` is deleted or replaced) and `resource-removed` (MEDIUM: any other delete or replace). `STATEFUL_TYPES` should become configurable in `.tf-reviewer.yml`.
+- `src/tf_reviewer/rules.py`: the rule engine. A rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate()` runs all `RULES` and sorts riskiest first; `overall_risk()` returns the highest. Rules so far: `data-loss` (HIGH: a type in `STATEFUL_TYPES` is deleted or replaced), `resource-removed` (MEDIUM: any other delete or replace) and `open-to-internet` (HIGH for all ports or a port in `SENSITIVE_PORTS`, MEDIUM for other non-web ports; covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`; reports only openings in `after` that weren't in `before`; ignores ICMP, egress and ports 80/443). `STATEFUL_TYPES`, `SENSITIVE_PORTS` and `WEB_PORTS` should become configurable in `.tf-reviewer.yml`.
+- `ResourceChange.before` / `.after` hold the attribute values (excluded from repr and hash).
 - `src/tf_reviewer/summary.py`: plain-text summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), and `format_findings()`.
 - `src/tf_reviewer/cli.py`: the `tf-reviewer` command; exit code 2 on unreadable input.
 - `tests/fixtures/`: real plan JSON made with `terraform_data` (see its README for how to regenerate).
@@ -27,6 +28,8 @@ python -m venv .venv                      # once
 ## Known gaps in the parser
 
 Tested so far only on `terraform_data`/`local_file` plans and hand-made edge cases. Not yet covered by real fixtures: AWS provider plans, modules, data sources (`read`), deposed objects (the same address can appear twice), `import` blocks (`importing` field), plans with `"errored": true`, other Terraform versions and OpenTofu, and very large plans. Real-world fixtures were deferred on 2026-10-25; add them before or during the Week 5 evaluation work.
+
+The `open-to-internet` rule doesn't yet handle: CIDRs that are unknown until apply (e.g. from another resource; they appear in `after_unknown`), prefix lists, rules that reference other security groups, network ACLs, and non-AWS providers.
 
 ## Core design principles
 

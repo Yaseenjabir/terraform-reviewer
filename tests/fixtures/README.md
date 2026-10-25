@@ -49,3 +49,15 @@ resource "terraform_data" "add" { input = "hello" }
 ## `no_changes.json`
 
 The plan after applying `mixed.json`: every resource is `no-op`.
+
+## `open_ports.json`
+
+A create-only AWS plan with inbound rules in all three Terraform styles. It was made offline with `terraform plan -refresh=false` (fake credentials, no AWS account), using hashicorp/aws v6.69.1:
+
+| Address | Style | Opens to the internet |
+| --- | --- | --- |
+| `aws_security_group.web` | inline `ingress` blocks | 443 (fine) and 22 (SSH) |
+| `aws_security_group_rule.rdp` | legacy separate rule, `type = "ingress"` | 3389 (RDP) |
+| `aws_vpc_security_group_ingress_rule.postgres` | newer separate rule, `cidr_ipv4` | 5432 (PostgreSQL) |
+| `aws_vpc_security_group_ingress_rule.internal_ssh` | newer separate rule | nothing (22 from `10.0.0.0/16` only) |
+| `aws_vpc_security_group_ingress_rule.everything_ipv6` | newer separate rule, `ip_protocol = "-1"`, `cidr_ipv6` | all ports (`::/0`) |
