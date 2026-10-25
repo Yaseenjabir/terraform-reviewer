@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine exists with three rules (`data-loss`, `resource-removed`, `open-to-internet`).
+**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine exists with five rules (`data-loss`, `resource-removed`, `open-to-internet`, `iam-wildcard`, `admin-policy-attached`).
 
 ## Commands
 
@@ -18,7 +18,7 @@ python -m venv .venv                      # once
 ## Code layout
 
 - `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op). Rejects non-plan input with `PlanError`.
-- `src/tf_reviewer/rules.py`: the rule engine. A rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate()` runs all `RULES` and sorts riskiest first; `overall_risk()` returns the highest. Rules so far: `data-loss` (HIGH: a type in `STATEFUL_TYPES` is deleted or replaced), `resource-removed` (MEDIUM: any other delete or replace) and `open-to-internet` (HIGH for all ports or a port in `SENSITIVE_PORTS`, MEDIUM for other non-web ports; covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`; reports only openings in `after` that weren't in `before`; ignores ICMP, egress and ports 80/443). `STATEFUL_TYPES`, `SENSITIVE_PORTS` and `WEB_PORTS` should become configurable in `.tf-reviewer.yml`.
+- `src/tf_reviewer/rules.py`: the rule engine. A rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate()` runs all `RULES` and sorts riskiest first; `overall_risk()` returns the highest. Rules so far: `data-loss` (HIGH: a type in `STATEFUL_TYPES` is deleted or replaced), `resource-removed` (MEDIUM: any other delete or replace) and `open-to-internet` (HIGH for all ports or a port in `SENSITIVE_PORTS`, MEDIUM for other non-web ports; covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`; reports only openings in `after` that weren't in `before`; ignores ICMP, egress and ports 80/443) and `iam-wildcard` (Allow statements granting `"*"`/`"*:*"` or `"iam:*"` are HIGH, any other `"service:*"` is MEDIUM; reads the `policy` JSON string of `aws_iam_policy`, `aws_iam_role_policy`, `aws_iam_user_policy`, `aws_iam_group_policy` and `aws_iam_role` `inline_policy` blocks; `Statement`, `Action` and `Resource` may each be a single value or a list; reports only grants that weren't in `before`) and `admin-policy-attached` (a broad AWS managed policy in `BROAD_MANAGED_POLICIES` is newly attached: `AdministratorAccess` and `IAMFullAccess` are HIGH, `PowerUserAccess` is MEDIUM; reads `policy_arn` on the four attachment resources and `managed_policy_arns` on `aws_iam_role`; only ARNs whose account field is `aws` count, so a customer policy with the same name is ignored; works in any partition). `STATEFUL_TYPES`, `SENSITIVE_PORTS` and `WEB_PORTS` should become configurable in `.tf-reviewer.yml`.
 - `ResourceChange.before` / `.after` hold the attribute values (excluded from repr and hash).
 - `src/tf_reviewer/summary.py`: plain-text summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), and `format_findings()`.
 - `src/tf_reviewer/cli.py`: the `tf-reviewer` command; exit code 2 on unreadable input.
@@ -30,6 +30,8 @@ python -m venv .venv                      # once
 Tested so far only on `terraform_data`/`local_file` plans and hand-made edge cases. Not yet covered by real fixtures: AWS provider plans, modules, data sources (`read`), deposed objects (the same address can appear twice), `import` blocks (`importing` field), plans with `"errored": true`, other Terraform versions and OpenTofu, and very large plans. Real-world fixtures were deferred on 2026-10-25; add them before or during the Week 5 evaluation work.
 
 The `open-to-internet` rule doesn't yet handle: CIDRs that are unknown until apply (e.g. from another resource; they appear in `after_unknown`), prefix lists, rules that reference other security groups, network ACLs, and non-AWS providers.
+
+The IAM rules don't yet handle: `aws_iam_role_policy_attachments_exclusive` and other newer attachment resources, other broad managed policies (e.g. `AmazonS3FullAccess`), `NotAction`/`NotResource`, trust policies with `Principal = "*"` (anyone can assume the role), resource policies (S3 bucket policies, KMS key policies), and policies only known after apply.
 
 ## Core design principles
 

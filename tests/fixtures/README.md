@@ -61,3 +61,29 @@ A create-only AWS plan with inbound rules in all three Terraform styles. It was 
 | `aws_vpc_security_group_ingress_rule.postgres` | newer separate rule, `cidr_ipv4` | 5432 (PostgreSQL) |
 | `aws_vpc_security_group_ingress_rule.internal_ssh` | newer separate rule | nothing (22 from `10.0.0.0/16` only) |
 | `aws_vpc_security_group_ingress_rule.everything_ipv6` | newer separate rule, `ip_protocol = "-1"`, `cidr_ipv6` | all ports (`::/0`) |
+
+## `iam_wildcards.json`
+
+A create-only AWS plan with IAM policies, made offline the same way as `open_ports.json`. Policies are stored as JSON strings inside the plan JSON.
+
+| Address | Grants | Expected |
+| --- | --- | --- |
+| `aws_iam_policy.admin` | `"*"` on `"*"` | HIGH |
+| `aws_iam_role_policy.iam_admin` | `"iam:*"` on `"*"` | HIGH |
+| `aws_iam_policy.s3_everything` | `"s3:*"` on `"*"` | MEDIUM |
+| `aws_iam_role.app` | inline policy block, `"ec2:*"` on `"*"` | MEDIUM |
+| `aws_iam_policy.read_one_bucket` | `s3:GetObject` on one bucket | nothing |
+| `aws_iam_policy.deny_everything` | `Deny` `"*"` | nothing |
+
+## `iam_attachments.json`
+
+A create-only AWS plan attaching managed policies, made offline the same way.
+
+| Address | Attaches | Expected |
+| --- | --- | --- |
+| `aws_iam_role_policy_attachment.admin` | `arn:aws:iam::aws:policy/AdministratorAccess` | HIGH |
+| `aws_iam_policy_attachment.admins` | `AdministratorAccess` (to a list of roles) | HIGH |
+| `aws_iam_user_policy_attachment.iam_full` | `IAMFullAccess` | HIGH |
+| `aws_iam_group_policy_attachment.power_user` | `PowerUserAccess` | MEDIUM |
+| `aws_iam_role_policy_attachment.read_only` | `ReadOnlyAccess` | nothing |
+| `aws_iam_role_policy_attachment.own_policy` | a customer policy that happens to be named `AdministratorAccess` | nothing |
