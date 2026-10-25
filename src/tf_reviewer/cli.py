@@ -6,6 +6,7 @@ import argparse
 import sys
 from decimal import Decimal, InvalidOperation
 
+from tf_reviewer.checkov import CheckovError, load_checkov
 from tf_reviewer.cost import CostDiffError, load_cost_diff
 from tf_reviewer.plan import PlanError, load_plan
 from tf_reviewer.rules import DEFAULT_COST_THRESHOLD, evaluate
@@ -40,6 +41,11 @@ def main(argv: list[str] | None = None) -> int:
         metavar="AMOUNT",
         help=f"report a monthly cost increase of at least this much (default: {DEFAULT_COST_THRESHOLD})",
     )
+    parser.add_argument(
+        "--checkov",
+        metavar="FILE",
+        help="Checkov JSON output for the same plan (`checkov -f plan.json --framework terraform_plan -o json`)",
+    )
     args = parser.parse_args(argv)
 
     # Plans and Infracost output can contain any Unicode (e.g. "t3.medium → t3.xlarge").
@@ -51,7 +57,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         changes = load_plan(args.plan_file)
         cost = load_cost_diff(args.cost_diff) if args.cost_diff else None
-    except (OSError, PlanError, CostDiffError) as e:
+        checkov = load_checkov(args.checkov) if args.checkov else None
+    except (OSError, PlanError, CostDiffError, CheckovError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
@@ -59,7 +66,7 @@ def main(argv: list[str] | None = None) -> int:
     if cost is not None:
         print(format_cost(cost))
     print()
-    print(format_findings(evaluate(changes, cost=cost, cost_threshold=args.cost_threshold)))
+    print(format_findings(evaluate(changes, cost=cost, cost_threshold=args.cost_threshold, checkov=checkov)))
     return 0
 
 

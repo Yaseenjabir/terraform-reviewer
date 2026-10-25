@@ -99,3 +99,17 @@ infracost diff --path . --compare-to baseline.json --format json --out-file infr
 ```
 
 Monthly cost goes from $48.808 to $139.912 (+$91.104). Infracost writes amounts as strings. In CI its `metadata` includes the commit author's name and email; this file was made outside git, so those fields are empty.
+
+## `checkov_plan.json` and `checkov.json`
+
+A create-only AWS plan with common mistakes (made offline like the others), and Checkov 3.3.30's scan of it:
+
+```bash
+checkov -f checkov_plan.json --framework terraform_plan -o json
+```
+
+The plan has an S3 bucket with every public-access block turned off, a public and unencrypted `aws_db_instance`, and a security group with SSH open to `0.0.0.0/0`. Checkov reported 23 failed checks on these 4 resources.
+
+`checkov.json` is **trimmed** to the fields the reviewer reads (`check_id`, `check_name`, `resource`, `resource_address`, `guideline`) plus the summary. Checkov's full output also contains absolute file paths and code blocks, which were removed.
+
+Scanning the other fixtures with Checkov showed which of its checks repeat the reviewer's own rules (listed in `COVERED_BY_OWN_RULES`), and that Checkov misses several things the reviewer's rules catch on the same plans: RDP opened with `aws_security_group_rule`, PostgreSQL and all-ports-over-IPv6 openings with `aws_vpc_security_group_ingress_rule`, an `ec2:*` inline role policy, and an attached `PowerUserAccess`.
