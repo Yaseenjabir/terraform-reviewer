@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from tf_reviewer.cli import main
-from tf_reviewer.plan import load_plan
-from tf_reviewer.summary import format_path, format_summary
+from tf_reviewer.plan import format_path, load_plan
+from tf_reviewer.summary import format_summary
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

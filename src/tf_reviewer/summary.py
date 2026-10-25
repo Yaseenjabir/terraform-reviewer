@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections import Counter
 
-from tf_reviewer.plan import Action, ResourceChange
+from tf_reviewer.plan import Action, ResourceChange, format_path
+from tf_reviewer.rules import Finding, overall_risk
 
 # The same symbols Terraform uses in its human-readable plan.
 _SYMBOLS = {
@@ -22,14 +23,6 @@ _HEADLINE = [
     (Action.DELETE, "to delete"),
     (Action.FORGET, "to forget"),
 ]
-
-
-def format_path(path: tuple[str | int, ...]) -> str:
-    """Turn a JSON path like ("ingress", 0, "cidr_blocks") into "ingress[0].cidr_blocks"."""
-    text = ""
-    for part in path:
-        text += f"[{part}]" if isinstance(part, int) else (f".{part}" if text else part)
-    return text
 
 
 def _symbol(change: ResourceChange) -> str:
@@ -63,3 +56,13 @@ def format_summary(changes: list[ResourceChange]) -> str:
         parts.append(f"{moved} moved")
 
     return "\n".join([f"Plan: {', '.join(parts)}"] + [_line(c) for c in shown])
+
+
+def format_findings(findings: list[Finding]) -> str:
+    """One line per finding, riskiest first, under a headline with the overall risk."""
+    risk = overall_risk(findings)
+    if risk is None:
+        return "No risky changes found."
+    lines = [f"Findings (overall risk: {risk.name}):"]
+    lines += [f"  {f.risk.name:<6}  [{f.rule_id}] {f.message}" for f in findings]
+    return "\n".join(lines)
