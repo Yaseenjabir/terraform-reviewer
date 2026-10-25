@@ -10,8 +10,10 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from decimal import Decimal
 from enum import IntEnum
 
+from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
 
 
@@ -334,10 +336,57 @@ def admin_policy_attached(change: ResourceChange) -> list[Finding]:
 RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet, iam_wildcard, admin_policy_attached)
 
 
-def evaluate(changes: Iterable[ResourceChange], rules: Iterable[Rule] = RULES) -> list[Finding]:
-    """Run every rule on every change. Riskiest findings first, then by address."""
+# --- Cost (a whole-plan rule, using the Infracost diff) -----------------------------------
+
+DEFAULT_COST_THRESHOLD = Decimal(50)
+
+
+def cost_increase(cost: CostDiff, threshold: Decimal = DEFAULT_COST_THRESHOLD) -> list[Finding]:
+    """The monthly cost rises by at least the threshold."""
+    change = cost.monthly_change
+    if change <= 0 or change < threshold:
+        return []
+
+    def money(amount: Decimal) -> str:
+        return format_money(amount, cost.currency)
+
+    percent = cost.percent_change
+    detail = f"+{percent:.0f}%, " if percent is not None else ""
+    message = (
+        f"Monthly cost rises by {money(change)} "
+        f"({detail}{money(cost.monthly_before)} -> {money(cost.monthly_after)})."
+    )
+
+    biggest = next((r for r in cost.resources if r.monthly_change > 0), None)
+    if biggest:
+        why = f" ({'; '.join(biggest.details)})" if biggest.details else ""
+        message += f" Biggest increase: {biggest.address} +{money(biggest.monthly_change)}{why}."
+
+    return [
+        Finding(
+            rule_id="cost-increase",
+            risk=Risk.MEDIUM,
+            address=biggest.address if biggest else "(whole plan)",
+            message=message,
+        )
+    ]
+
+
+def evaluate(
+    changes: Iterable[ResourceChange],
+    rules: Iterable[Rule] = RULES,
+    *,
+    cost: CostDiff | None = None,
+    cost_threshold: Decimal = DEFAULT_COST_THRESHOLD,
+) -> list[Finding]:
+    """Run every rule on every change, plus the cost rule if a cost diff is given.
+
+    Riskiest findings first, then by address.
+    """
     rules = tuple(rules)
     findings = [finding for change in changes for rule in rules for finding in rule(change)]
+    if cost is not None:
+        findings += cost_increase(cost, cost_threshold)
     return sorted(findings, key=lambda f: (-f.risk, f.address, f.rule_id))
 
 

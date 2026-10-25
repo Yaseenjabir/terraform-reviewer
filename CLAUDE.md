@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine exists with five rules (`data-loss`, `resource-removed`, `open-to-internet`, `iam-wildcard`, `admin-policy-attached`).
+**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine has six rules, including the cost rule. Still to do in Week 2: Checkov integration and the `.tf-reviewer.yml` config file.
 
 ## Commands
 
@@ -12,17 +12,26 @@ This is a portfolio project aimed at DevOps/platform/AI engineering roles. It sh
 python -m venv .venv                      # once
 .venv/Scripts/python -m pip install -e ".[dev]"   # Windows; on Linux/macOS use .venv/bin/
 .venv/Scripts/python -m pytest -q         # run the tests
-.venv/Scripts/tf-reviewer plan.json       # summarize a plan (from `terraform show -json <planfile>`)
+.venv/Scripts/tf-reviewer plan.json       # review a plan (from `terraform show -json <planfile>`)
+.venv/Scripts/tf-reviewer plan.json --cost-diff infracost.json --cost-threshold 50
 ```
 
 ## Code layout
 
-- `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op). Rejects non-plan input with `PlanError`.
-- `src/tf_reviewer/rules.py`: the rule engine. A rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate()` runs all `RULES` and sorts riskiest first; `overall_risk()` returns the highest. Rules so far: `data-loss` (HIGH: a type in `STATEFUL_TYPES` is deleted or replaced), `resource-removed` (MEDIUM: any other delete or replace) and `open-to-internet` (HIGH for all ports or a port in `SENSITIVE_PORTS`, MEDIUM for other non-web ports; covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`; reports only openings in `after` that weren't in `before`; ignores ICMP, egress and ports 80/443) and `iam-wildcard` (Allow statements granting `"*"`/`"*:*"` or `"iam:*"` are HIGH, any other `"service:*"` is MEDIUM; reads the `policy` JSON string of `aws_iam_policy`, `aws_iam_role_policy`, `aws_iam_user_policy`, `aws_iam_group_policy` and `aws_iam_role` `inline_policy` blocks; `Statement`, `Action` and `Resource` may each be a single value or a list; reports only grants that weren't in `before`) and `admin-policy-attached` (a broad AWS managed policy in `BROAD_MANAGED_POLICIES` is newly attached: `AdministratorAccess` and `IAMFullAccess` are HIGH, `PowerUserAccess` is MEDIUM; reads `policy_arn` on the four attachment resources and `managed_policy_arns` on `aws_iam_role`; only ARNs whose account field is `aws` count, so a customer policy with the same name is ignored; works in any partition). `STATEFUL_TYPES`, `SENSITIVE_PORTS` and `WEB_PORTS` should become configurable in `.tf-reviewer.yml`.
-- `ResourceChange.before` / `.after` hold the attribute values (excluded from repr and hash).
-- `src/tf_reviewer/summary.py`: plain-text summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), and `format_findings()`.
-- `src/tf_reviewer/cli.py`: the `tf-reviewer` command; exit code 2 on unreadable input.
-- `tests/fixtures/`: real plan JSON made with `terraform_data` (see its README for how to regenerate).
+- `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op), plus `before`/`after` attribute values (excluded from repr and hash). Rejects non-plan input with `PlanError`.
+- `src/tf_reviewer/cost.py`: reads an Infracost diff (`infracost diff --format json`) into a `CostDiff` (currency, monthly before/after, per-resource changes). Amounts are `Decimal`, because Infracost writes them as strings. Only cost figures are kept: in CI the file's metadata includes the commit author's name and email. Rejects other input with `CostDiffError`.
+- `src/tf_reviewer/rules.py`: the rule engine. A per-resource rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate(changes, cost=..., cost_threshold=...)` runs all `RULES` (plus the cost rule if a cost diff is given) and sorts riskiest first; `overall_risk()` returns the highest. The rules:
+  - `data-loss` (HIGH): a type in `STATEFUL_TYPES` is deleted or replaced.
+  - `resource-removed` (MEDIUM): any other delete or replace.
+  - `open-to-internet`: HIGH for all ports or a port in `SENSITIVE_PORTS`, MEDIUM for other non-web ports. Covers inline `ingress` on `aws_security_group`, `aws_security_group_rule` with `type = "ingress"`, and `aws_vpc_security_group_ingress_rule`. Ignores ICMP, egress and ports 80/443.
+  - `iam-wildcard`: Allow statements granting `"*"`/`"*:*"` or `"iam:*"` are HIGH, any other `"service:*"` is MEDIUM. Reads the `policy` JSON string of `aws_iam_policy`, `aws_iam_role_policy`, `aws_iam_user_policy`, `aws_iam_group_policy` and `aws_iam_role` `inline_policy` blocks. `Statement`, `Action` and `Resource` may each be a single value or a list.
+  - `admin-policy-attached`: a broad AWS managed policy in `BROAD_MANAGED_POLICIES` is newly attached (`AdministratorAccess`, `IAMFullAccess` HIGH; `PowerUserAccess` MEDIUM). Reads `policy_arn` on the four attachment resources and `managed_policy_arns` on `aws_iam_role`. Only ARNs whose account field is `aws` count, in any partition.
+  - `cost-increase` (MEDIUM, whole plan): monthly cost rises by at least the threshold (default `DEFAULT_COST_THRESHOLD` = 50); names the biggest-increase resource.
+  - The security and IAM rules report only what the change adds (present in `after`, absent from `before`).
+  - `STATEFUL_TYPES`, `SENSITIVE_PORTS`, `WEB_PORTS`, `BROAD_MANAGED_POLICIES` and the cost threshold should become configurable in `.tf-reviewer.yml`.
+- `src/tf_reviewer/summary.py`: plain-text output: plan summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), `format_cost()` and `format_findings()`. The reviewer's own text is ASCII; text from Terraform or Infracost can contain any Unicode (e.g. `→`).
+- `src/tf_reviewer/cli.py`: the `tf-reviewer` command (`--cost-diff`, `--cost-threshold`). Writes UTF-8 to stdout/stderr, because legacy Windows console encodings can't print characters like `→`. Exit code 2 on unreadable input.
+- `tests/fixtures/`: real plan and Infracost JSON (see its README for how each was made).
 - `.github/workflows/tests.yml`: runs pytest on every PR and on `main`.
 
 ## Known gaps in the parser
