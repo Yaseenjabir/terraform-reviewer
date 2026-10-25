@@ -23,6 +23,10 @@ python -m venv .venv                      # once
 - `tests/fixtures/`: real plan JSON made with `terraform_data` (see its README for how to regenerate).
 - `.github/workflows/tests.yml`: runs pytest on every PR and on `main`.
 
+## Known gaps in the parser
+
+Tested so far only on `terraform_data`/`local_file` plans and hand-made edge cases. Not yet covered by real fixtures: AWS provider plans, modules, data sources (`read`), deposed objects (the same address can appear twice), `import` blocks (`importing` field), plans with `"errored": true`, other Terraform versions and OpenTofu, and very large plans. Real-world fixtures were deferred on 2026-10-25; add them before or during the Week 5 evaluation work.
+
 ## Core design principles
 
 Follow these when making any design or implementation choice:
