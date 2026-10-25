@@ -87,3 +87,15 @@ A create-only AWS plan attaching managed policies, made offline the same way.
 | `aws_iam_group_policy_attachment.power_user` | `PowerUserAccess` | MEDIUM |
 | `aws_iam_role_policy_attachment.read_only` | `ReadOnlyAccess` | nothing |
 | `aws_iam_role_policy_attachment.own_policy` | a customer policy that happens to be named `AdministratorAccess` | nothing |
+
+## `infracost_diff.json`
+
+A real Infracost diff, made with Infracost v0.10.47 from a configuration with one `aws_instance` and one `aws_db_instance` (never applied). A baseline was saved with the instance as `t3.medium`, then the instance was changed to `t3.xlarge`:
+
+```bash
+infracost breakdown --path . --format json --out-file baseline.json
+# change instance_type to "t3.xlarge"
+infracost diff --path . --compare-to baseline.json --format json --out-file infracost_diff.json
+```
+
+Monthly cost goes from $48.808 to $139.912 (+$91.104). Infracost writes amounts as strings. In CI its `metadata` includes the commit author's name and email; this file was made outside git, so those fields are empty.

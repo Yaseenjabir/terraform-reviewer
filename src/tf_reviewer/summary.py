@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
 from tf_reviewer.rules import Finding, overall_risk
 
@@ -56,6 +57,19 @@ def format_summary(changes: list[ResourceChange]) -> str:
         parts.append(f"{moved} moved")
 
     return "\n".join([f"Plan: {', '.join(parts)}"] + [_line(c) for c in shown])
+
+
+def format_cost(cost: CostDiff) -> str:
+    """One line: monthly cost before and after, with the change."""
+    before, after = format_money(cost.monthly_before, cost.currency), format_money(cost.monthly_after, cost.currency)
+    if cost.monthly_change == 0:
+        return f"Monthly cost: {after} (no change)"
+    sign = "+" if cost.monthly_change > 0 else ""
+    change = f"{sign}{format_money(cost.monthly_change, cost.currency)}"
+    percent = cost.percent_change
+    if percent is not None:
+        change += f", {sign}{percent:.0f}%"
+    return f"Monthly cost: {before} -> {after} ({change})"
 
 
 def format_findings(findings: list[Finding]) -> str:
