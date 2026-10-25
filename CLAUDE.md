@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 1 in progress. The plan parser (`tf_reviewer.plan`) and a plain-text summary with a CLI (`tf-reviewer plan.json`) exist, with tests.
+**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine exists with two rules (`data-loss`, `resource-removed`).
 
 ## Commands
 
@@ -18,7 +18,8 @@ python -m venv .venv                      # once
 ## Code layout
 
 - `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op). Rejects non-plan input with `PlanError`.
-- `src/tf_reviewer/summary.py`: plain-text summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves).
+- `src/tf_reviewer/rules.py`: the rule engine. A rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate()` runs all `RULES` and sorts riskiest first; `overall_risk()` returns the highest. Rules so far: `data-loss` (HIGH: a type in `STATEFUL_TYPES` is deleted or replaced) and `resource-removed` (MEDIUM: any other delete or replace). `STATEFUL_TYPES` should become configurable in `.tf-reviewer.yml`.
+- `src/tf_reviewer/summary.py`: plain-text summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), and `format_findings()`.
 - `src/tf_reviewer/cli.py`: the `tf-reviewer` command; exit code 2 on unreadable input.
 - `tests/fixtures/`: real plan JSON made with `terraform_data` (see its README for how to regenerate).
 - `.github/workflows/tests.yml`: runs pytest on every PR and on `main`.

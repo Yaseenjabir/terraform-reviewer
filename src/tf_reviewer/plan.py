@@ -67,6 +67,14 @@ class ResourceChange:
         return self.actions == ("create", "delete")
 
 
+def format_path(path: tuple[str | int, ...]) -> str:
+    """Turn a JSON path like ("ingress", 0, "cidr_blocks") into "ingress[0].cidr_blocks"."""
+    text = ""
+    for part in path:
+        text += f"[{part}]" if isinstance(part, int) else (f".{part}" if text else part)
+    return text
+
+
 def parse_plan(plan: dict[str, Any]) -> list[ResourceChange]:
     """Turn a decoded plan JSON document into a list of ResourceChange, in plan order."""
     if not isinstance(plan, dict) or "format_version" not in plan:

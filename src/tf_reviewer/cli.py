@@ -6,7 +6,8 @@ import argparse
 import sys
 
 from tf_reviewer.plan import PlanError, load_plan
-from tf_reviewer.summary import format_summary
+from tf_reviewer.rules import evaluate
+from tf_reviewer.summary import format_findings, format_summary
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -24,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     print(format_summary(changes))
+    print()
+    print(format_findings(evaluate(changes)))
     return 0
 
 
