@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine has six rules, including the cost rule. Still to do in Week 2: Checkov integration and the `.tf-reviewer.yml` config file.
+**Status:** Week 2 in progress. Week 1 (plan parser, summary, CLI) is merged. The rule engine has six rules plus Checkov integration. Still to do in Week 2: the `.tf-reviewer.yml` config file.
 
 ## Commands
 
@@ -13,13 +13,22 @@ python -m venv .venv                      # once
 .venv/Scripts/python -m pip install -e ".[dev]"   # Windows; on Linux/macOS use .venv/bin/
 .venv/Scripts/python -m pytest -q         # run the tests
 .venv/Scripts/tf-reviewer plan.json       # review a plan (from `terraform show -json <planfile>`)
-.venv/Scripts/tf-reviewer plan.json --cost-diff infracost.json --cost-threshold 50
+.venv/Scripts/tf-reviewer plan.json --cost-diff infracost.json --cost-threshold 50 --checkov checkov.json
+```
+
+The inputs come from:
+
+```bash
+terraform plan -out=tfplan && terraform show -json tfplan > plan.json
+infracost diff --path . --compare-to baseline.json --format json --out-file infracost.json
+checkov -f plan.json --framework terraform_plan -o json > checkov.json
 ```
 
 ## Code layout
 
 - `src/tf_reviewer/plan.py`: reads plan JSON into `ResourceChange` objects with one `Action` each (create, update, replace, delete, read, forget, no-op), plus `before`/`after` attribute values (excluded from repr and hash). Rejects non-plan input with `PlanError`.
 - `src/tf_reviewer/cost.py`: reads an Infracost diff (`infracost diff --format json`) into a `CostDiff` (currency, monthly before/after, per-resource changes). Amounts are `Decimal`, because Infracost writes them as strings. Only cost figures are kept: in CI the file's metadata includes the commit author's name and email. Rejects other input with `CostDiffError`.
+- `src/tf_reviewer/checkov.py`: reads Checkov JSON output (one report or a list of reports) into `CheckovFailure`s (check ID, name, resource address, guideline). Checkov's output also contains absolute file paths and code blocks; never put those in a PR comment. Rejects other input with `CheckovError`.
 - `src/tf_reviewer/rules.py`: the rule engine. A per-resource rule is a function `ResourceChange -> list[Finding]`; a `Finding` has `rule_id`, `risk` (`Risk.LOW/MEDIUM/HIGH`, an `IntEnum`), `address` and `message`. `evaluate(changes, cost=..., cost_threshold=...)` runs all `RULES` (plus the cost rule if a cost diff is given) and sorts riskiest first; `overall_risk()` returns the highest. The rules:
   - `data-loss` (HIGH): a type in `STATEFUL_TYPES` is deleted or replaced.
   - `resource-removed` (MEDIUM): any other delete or replace.
@@ -27,10 +36,11 @@ python -m venv .venv                      # once
   - `iam-wildcard`: Allow statements granting `"*"`/`"*:*"` or `"iam:*"` are HIGH, any other `"service:*"` is MEDIUM. Reads the `policy` JSON string of `aws_iam_policy`, `aws_iam_role_policy`, `aws_iam_user_policy`, `aws_iam_group_policy` and `aws_iam_role` `inline_policy` blocks. `Statement`, `Action` and `Resource` may each be a single value or a list.
   - `admin-policy-attached`: a broad AWS managed policy in `BROAD_MANAGED_POLICIES` is newly attached (`AdministratorAccess`, `IAMFullAccess` HIGH; `PowerUserAccess` MEDIUM). Reads `policy_arn` on the four attachment resources and `managed_policy_arns` on `aws_iam_role`. Only ARNs whose account field is `aws` count, in any partition.
   - `cost-increase` (MEDIUM, whole plan): monthly cost rises by at least the threshold (default `DEFAULT_COST_THRESHOLD` = 50); names the biggest-increase resource.
+  - `checkov` (from Checkov results, via `checkov_findings()`): only failures on resources the plan creates, updates or replaces; checks in `COVERED_BY_OWN_RULES` are dropped (confirmed by scanning the fixtures); checks in `IMPORTANT_CHECKS` get one finding per resource at the highest of their risks (Checkov's `severity` is always null without a paid Prisma Cloud account); all other failures are collapsed into one LOW finding listing their IDs.
   - The security and IAM rules report only what the change adds (present in `after`, absent from `before`).
   - `STATEFUL_TYPES`, `SENSITIVE_PORTS`, `WEB_PORTS`, `BROAD_MANAGED_POLICIES` and the cost threshold should become configurable in `.tf-reviewer.yml`.
 - `src/tf_reviewer/summary.py`: plain-text output: plan summary using Terraform's symbols (`+`, `~`, `-`, `-/+`, `+/-`, `->` for moves), `format_cost()` and `format_findings()`. The reviewer's own text is ASCII; text from Terraform or Infracost can contain any Unicode (e.g. `→`).
-- `src/tf_reviewer/cli.py`: the `tf-reviewer` command (`--cost-diff`, `--cost-threshold`). Writes UTF-8 to stdout/stderr, because legacy Windows console encodings can't print characters like `→`. Exit code 2 on unreadable input.
+- `src/tf_reviewer/cli.py`: the `tf-reviewer` command (`--cost-diff`, `--cost-threshold`, `--checkov`). Writes UTF-8 to stdout/stderr, because legacy Windows console encodings can't print characters like `→`. Exit code 2 on unreadable input.
 - `tests/fixtures/`: real plan and Infracost JSON (see its README for how each was made).
 - `.github/workflows/tests.yml`: runs pytest on every PR and on `main`.
 
@@ -39,6 +49,8 @@ python -m venv .venv                      # once
 Tested so far only on `terraform_data`/`local_file` plans and hand-made edge cases. Not yet covered by real fixtures: AWS provider plans, modules, data sources (`read`), deposed objects (the same address can appear twice), `import` blocks (`importing` field), plans with `"errored": true`, other Terraform versions and OpenTofu, and very large plans. Real-world fixtures were deferred on 2026-10-25; add them before or during the Week 5 evaluation work.
 
 The `open-to-internet` rule doesn't yet handle: CIDRs that are unknown until apply (e.g. from another resource; they appear in `after_unknown`), prefix lists, rules that reference other security groups, network ACLs, and non-AWS providers.
+
+The Checkov integration doesn't yet: compare against a scan of the base branch (an updated resource with a pre-existing failure is still reported), cover `IMPORTANT_CHECKS` beyond a first curated set, or pass Checkov's guideline links through to the comment. Checkov's graph checks (`CKV2_*`) can misfire on plans, e.g. `CKV2_AWS_6` failed although the plan had a public access block for the bucket.
 
 The IAM rules don't yet handle: `aws_iam_role_policy_attachments_exclusive` and other newer attachment resources, other broad managed policies (e.g. `AmazonS3FullAccess`), `NotAction`/`NotResource`, trust policies with `Principal = "*"` (anyone can assume the role), resource policies (S3 bucket policies, KMS key policies), and policies only known after apply.
 

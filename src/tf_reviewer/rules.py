@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import IntEnum
 
+from tf_reviewer.checkov import CheckovFailure
 from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
 
@@ -372,21 +373,103 @@ def cost_increase(cost: CostDiff, threshold: Decimal = DEFAULT_COST_THRESHOLD) -
     ]
 
 
+# --- Checkov (security scanner findings, filtered and ranked) ------------------------------
+
+# Checkov checks worth a risk level of their own, with a short description. Checkov's own
+# severity field is only filled in with a paid Prisma Cloud account, so the reviewer ranks them.
+IMPORTANT_CHECKS = {
+    "CKV_AWS_17": (Risk.HIGH, "database is publicly accessible"),
+    "CKV_AWS_20": (Risk.HIGH, "bucket ACL allows public read"),
+    "CKV_AWS_57": (Risk.HIGH, "bucket ACL allows public write"),
+    "CKV_AWS_53": (Risk.HIGH, "public ACLs are not blocked"),
+    "CKV_AWS_54": (Risk.HIGH, "public bucket policies are not blocked"),
+    "CKV_AWS_55": (Risk.HIGH, "public ACLs are not ignored"),
+    "CKV_AWS_56": (Risk.HIGH, "public buckets are not restricted"),
+    "CKV_AWS_41": (Risk.HIGH, "AWS access keys are hard-coded in the provider"),
+    "CKV_AWS_46": (Risk.HIGH, "EC2 user data contains secrets"),
+    "CKV_AWS_16": (Risk.MEDIUM, "database storage is not encrypted"),
+    "CKV_AWS_3": (Risk.MEDIUM, "EBS volume is not encrypted"),
+}
+
+# Checkov checks that report the same problems as the reviewer's own rules (confirmed by
+# scanning the test fixtures with Checkov 3.3.30), so they'd only repeat a finding.
+COVERED_BY_OWN_RULES = frozenset(
+    {
+        "CKV_AWS_24",  # SSH open to 0.0.0.0/0            -> open-to-internet
+        "CKV_AWS_25",  # RDP open to 0.0.0.0/0            -> open-to-internet
+        "CKV_AWS_260",  # port 80 open to 0.0.0.0/0      -> open-to-internet (port 80 is allowed)
+        "CKV_AWS_277",  # all ports open to 0.0.0.0/0    -> open-to-internet
+        "CKV_AWS_62",  # "*:*" admin policy               -> iam-wildcard
+        "CKV_AWS_63",  # "*" as action                    -> iam-wildcard
+        "CKV2_AWS_40",  # full IAM privileges            -> iam-wildcard
+        "CKV_AWS_274",  # AdministratorAccess attached   -> admin-policy-attached
+        "CKV2_AWS_56",  # IAMFullAccess attached         -> admin-policy-attached
+    }
+)
+
+_MAX_LISTED_IDS = 8
+
+
+def checkov_findings(failures: Iterable[CheckovFailure], changes: Iterable[ResourceChange]) -> list[Finding]:
+    """Turn Checkov failures into findings, keeping the noise down.
+
+    - Only resources this plan creates, updates or replaces count; the rest aren't this change's fault.
+    - Checks the reviewer's own rules already cover are dropped.
+    - Important checks get one finding per resource, at the highest risk among them.
+    - Everything else is collapsed into a single LOW finding.
+    """
+    changed = {change.address for change in changes if change.is_change}
+    relevant = [f for f in failures if f.address in changed and f.check_id not in COVERED_BY_OWN_RULES]
+
+    important: dict[str, list[CheckovFailure]] = {}
+    others: list[CheckovFailure] = []
+    for failure in relevant:
+        (important.setdefault(failure.address, []) if failure.check_id in IMPORTANT_CHECKS else others).append(failure)
+
+    findings = []
+    for address, failed in sorted(important.items()):
+        failed = sorted({f.check_id: f for f in failed}.values(), key=lambda f: f.check_id)
+        risk = max(IMPORTANT_CHECKS[f.check_id][0] for f in failed)
+        problems = "; ".join(f"{IMPORTANT_CHECKS[f.check_id][1]} ({f.check_id})" for f in failed)
+        findings.append(Finding(rule_id="checkov", risk=risk, address=address, message=f"{address}: {problems}."))
+
+    if others:
+        ids = sorted({f.check_id for f in others})
+        listed = ", ".join(ids[:_MAX_LISTED_IDS]) + (f" and {len(ids) - _MAX_LISTED_IDS} more" if len(ids) > _MAX_LISTED_IDS else "")
+        resources = len({f.address for f in others})
+        findings.append(
+            Finding(
+                rule_id="checkov",
+                risk=Risk.LOW,
+                address="(several resources)" if resources > 1 else others[0].address,
+                message=(
+                    f"{len(others)} other Checkov best-practice check(s) failed on "
+                    f"{resources} changed resource(s): {listed}."
+                ),
+            )
+        )
+    return findings
+
+
 def evaluate(
     changes: Iterable[ResourceChange],
     rules: Iterable[Rule] = RULES,
     *,
     cost: CostDiff | None = None,
     cost_threshold: Decimal = DEFAULT_COST_THRESHOLD,
+    checkov: Iterable[CheckovFailure] | None = None,
 ) -> list[Finding]:
-    """Run every rule on every change, plus the cost rule if a cost diff is given.
+    """Run every rule on every change, plus the cost and Checkov rules if their input is given.
 
     Riskiest findings first, then by address.
     """
+    changes = list(changes)
     rules = tuple(rules)
     findings = [finding for change in changes for rule in rules for finding in rule(change)]
     if cost is not None:
         findings += cost_increase(cost, cost_threshold)
+    if checkov is not None:
+        findings += checkov_findings(checkov, changes)
     return sorted(findings, key=lambda f: (-f.risk, f.address, f.rule_id))
 
 
