@@ -1,0 +1,507 @@
+{
+ "model": "openai/gpt-oss-20b",
+ "kind": "checked",
+ "base_url": "https://api.groq.com/openai/v1",
+ "answers": {
+  "cost-dynamodb-capacity-jump": {
+   "first_text": "{\"summary\":\"The merge introduces a 3,900% jump in DynamoDB table capacity costs and violates three Checkov best\u2011practice rules. Review that the higher provisioned throughput is intentional and confirm that encryption, point\u2011in\u2011time recovery, and any other missing features are addressed before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Provisioning 2.85\u202fWCU/RCU to 113.88\u202fWCU/RCU will raise monthly costs by about $113, potentially exceeding the budget and impacting other services.\",\"fix\":\"Reduce the `write_capacity` and `read_capacity` to the minimum required or switch to `billing_mode = \\\"PAY_PER_REQUEST\\\"` to avoid over\u2011provisioning.\"},{\"id\":2,\"why\":\"The table lacks recommended safeguards such as encryption at rest and point\u2011in\u2011time recovery, exposing data to potential loss or breach.\",\"fix\":\"Add the missing attributes: a `server_side_encryption { enabled = true }` block, `point_in_time_recovery { enabled = true }`, and any other attribute identified by the CKV rules.\"}]}",
+   "final": {
+    "summary": "The merge introduces a 3,900% jump in DynamoDB table capacity costs and violates three Checkov best\u2011practice rules. Review that the higher provisioned throughput is intentional and confirm that encryption, point\u2011in\u2011time recovery, and any other missing features are addressed before merging.",
+    "explanations": [
+     {
+      "why": "Provisioning 2.85\u202fWCU/RCU to 113.88\u202fWCU/RCU will raise monthly costs by about $113, potentially exceeding the budget and impacting other services.",
+      "fix": "Reduce the `write_capacity` and `read_capacity` to the minimum required or switch to `billing_mode = \"PAY_PER_REQUEST\"` to avoid over\u2011provisioning."
+     },
+     {
+      "why": "The table lacks recommended safeguards such as encryption at rest and point\u2011in\u2011time recovery, exposing data to potential loss or breach.",
+      "fix": "Add the missing attributes: a `server_side_encryption { enabled = true }` block, `point_in_time_recovery { enabled = true }`, and any other attribute identified by the CKV rules."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.97,
+   "tokens": [
+    795,
+    894
+   ]
+  },
+  "dynamodb-forced-replacement": {
+   "first_text": "{\"summary\":\"The pull request forces replacement of an existing DynamoDB table, which would erase all data unless a backup or migration is performed. Additionally, two Checkov best\u2011practice checks fail: point\u2011in\u2011time recovery and stream configuration are missing. Reviewers should confirm that replacing the table is intentional and ensure recovery options are enabled before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Changing the `hash_key` forces Terraform to delete the table and create a new one, causing all stored data to be lost if not backed up or migrated.\",\"fix\":\"If the key change is intentional, create a new table and migrate data (or use `lifecycle { ignore_changes = [hash_key] }` to avoid replacement). If the key should remain the same, revert the `hash_key` change. Also consider adding `lifecycle { prevent_destroy = true }` to warn against accidental destruction.\"},{\"id\":2,\"why\":\"The table lacks point\u2011in\u2011time recovery and a stream specification, which means it cannot be restored after accidental deletion or data corruption, and changes are not streamable to downstream systems.\",\"fix\":\"Add `point_in_time_recovery { enabled = true }` to the resource and enable a stream with `stream_specification { stream_enabled = true, stream_view_type = \\\"NEW_AND_OLD_IMAGES\\\" }` (or another appropriate view type).\"}]}",
+   "final": {
+    "summary": "The pull request forces replacement of an existing DynamoDB table, which would erase all data unless a backup or migration is performed. Additionally, two Checkov best\u2011practice checks fail: point\u2011in\u2011time recovery and stream configuration are missing. Reviewers should confirm that replacing the table is intentional and ensure recovery options are enabled before merging.",
+    "explanations": [
+     {
+      "why": "Changing the `hash_key` forces Terraform to delete the table and create a new one, causing all stored data to be lost if not backed up or migrated.",
+      "fix": "If the key change is intentional, create a new table and migrate data (or use `lifecycle { ignore_changes = [hash_key] }` to avoid replacement). If the key should remain the same, revert the `hash_key` change. Also consider adding `lifecycle { prevent_destroy = true }` to warn against accidental destruction."
+     },
+     {
+      "why": "Without point\u2011in\u2011time recovery the table cannot be restored after accidental deletion, and missing tags make resource identification and cost allocation harder.",
+      "fix": "Add point\u2011in\u2011time recovery by including `point_in_time_recovery { enabled = true }` in the table definition, and add a `tags` block with appropriate key/value pairs to satisfy tagging best practices."
+     }
+    ]
+   },
+   "requests": 2,
+   "dropped_fixes": 0,
+   "seconds": 3.46,
+   "tokens": [
+    1543,
+    1852
+   ]
+  },
+  "dynamodb-pitr-disabled": {
+   "first_text": "{\"summary\":\"The pull request disables point\u2011in\u2011time recovery for the DynamoDB table, which is a MEDIUM risk that could prevent recovery from accidental deletes or corruption. Additionally, Checkov flagged that the table may also lack encryption at rest; confirm that encryption is configured before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Disabling point\u2011in\u2011time recovery removes the ability to restore the table to any point within the past 35 days, exposing the data to irreversible loss if accidental deletion or corruption occurs.\",\"fix\":\"Re\u2011enable point\u2011in\u2011time recovery with a block such as:\\n```\\npoint_in_time_recovery {\\n  enabled = true\\n}\\n```\"},{\"id\":2,\"why\":\"The Checkov failures indicate that the table may also not be encrypted with AWS KMS, which could expose data if the underlying storage is compromised.\",\"fix\":\"Add or verify an `server_side_encryption` block with a KMS key, e.g.\\n```\\nserver_side_encryption {\\n  enabled = true\\n  kms_key_arn = \\\"arn:aws:kms:\u2026\\\"\\n}\\n```\"}]}",
+   "final": {
+    "summary": "The pull request disables point\u2011in\u2011time recovery for the DynamoDB table, which is a MEDIUM risk that could prevent recovery from accidental deletes or corruption. Additionally, Checkov flagged that the table may also lack encryption at rest; confirm that encryption is configured before merging.",
+    "explanations": [
+     {
+      "why": "Disabling point\u2011in\u2011time recovery removes the ability to restore the table to any point within the past 35 days, exposing the data to irreversible loss if accidental deletion or corruption occurs.",
+      "fix": "Re\u2011enable point\u2011in\u2011time recovery with a block such as:\n```\npoint_in_time_recovery {\n  enabled = true\n}\n```"
+     },
+     {
+      "why": "The Checkov failures indicate that the table may also not be encrypted with AWS KMS, which could expose data if the underlying storage is compromised.",
+      "fix": "Add or verify an `server_side_encryption` block with a KMS key, e.g.\n```\nserver_side_encryption {\n  enabled = true\n  kms_key_arn = \"arn:aws:kms:\u2026\"\n}\n```"
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 2.74,
+   "tokens": [
+    752,
+    566
+   ]
+  },
+  "dynamodb-renamed-without-moved": {
+   "first_text": "{\"summary\":\"The plan will delete a data\u2011storing DynamoDB table and violates several security best\u2011practices for the remaining table. Verify whether the deletion is intentional and ensure backups, then enable point\u2011in\u2011time recovery and server\u2011side encryption on the customer_orders table before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Deleting aws_dynamodb_table.orders will permanently erase all data stored in it, causing irreversible data loss if no prior backup exists.\",\"fix\":\"Add a lifecycle block to the aws_dynamodb_table.orders resource: `lifecycle { prevent_destroy = true }` and ensure a backup or snapshot is created before deletion.\"},{\"id\":2,\"why\":\"The aws_dynamodb_table.customer_orders resource lacks point\u2011in\u2011time recovery and server\u2011side encryption, increasing the risk of data loss or unauthorized access.\",\"fix\":\"Add the following to aws_dynamodb_table.customer_orders: `point_in_time_recovery { enabled = true }` and `server_side_encryption { enabled = true }` (or specify a KMS key).\"}]}",
+   "final": {
+    "summary": "The plan will delete a data\u2011storing DynamoDB table and violates several security best\u2011practices for the remaining table. Verify whether the deletion is intentional and ensure backups, then enable point\u2011in\u2011time recovery and server\u2011side encryption on the customer_orders table before merging.",
+    "explanations": [
+     {
+      "why": "Deleting aws_dynamodb_table.orders will permanently erase all data stored in it, causing irreversible data loss if no prior backup exists.",
+      "fix": "Add a lifecycle block to the aws_dynamodb_table.orders resource: `lifecycle { prevent_destroy = true }` and ensure a backup or snapshot is created before deletion."
+     },
+     {
+      "why": "The aws_dynamodb_table.customer_orders resource lacks point\u2011in\u2011time recovery and server\u2011side encryption, increasing the risk of data loss or unauthorized access.",
+      "fix": "Add the following to aws_dynamodb_table.customer_orders: `point_in_time_recovery { enabled = true }` and `server_side_encryption { enabled = true }` (or specify a KMS key)."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.32,
+   "tokens": [
+    756,
+    534
+   ]
+  },
+  "iam-policy-service-wildcard": {
+   "first_text": "{\"summary\":\"The pull request introduces an overly permissive IAM policy that allows all S3 actions on every bucket, posing a MEDIUM risk of accidental data exposure or deletion. Additionally, several Checkov best\u2011practice checks fail, indicating potential violations such as wildcard permissions, IAM actions, or root attachment. Reviewers should verify the intended permissions scope and ensure the policy aligns with least\u2011privilege principles before merging.\",\"explanations\":[{\"id\":1,\"why\":\"The policy grants \\\"s3:*\\\" on \\\"*\\\", meaning any user or service with this policy can perform any S3 operation on any bucket, which could lead to data leakage or accidental deletion.\",\"fix\":\"Replace the wildcard action and resource with specific permissions and bucket ARNs. For example, set `\\\"Action\\\": [\\\"s3:ListBucket\\\", \\\"s3:GetObject\\\", \\\"s3:PutObject\\\"]` and `\\\"Resource\\\": [\\\"arn:aws:s3:::my-bucket\\\", \\\"arn:aws:s3:::my-bucket/*\\\"]` in the policy document.\"},{\"id\":2,\"why\":\"The Checkov checks (CKV_AWS_288, CKV_AWS_289, CKV_AWS_290, CKV_AWS_355) flag common IAM best\u2011practice violations such as attaching policies to the root user, allowing wildcard actions/resources, and permitting IAM administrative actions.\",\"fix\":\"Ensure the policy is attached only to specific roles/users, does not contain wildcard actions or resources, and does not grant IAM actions unless explicitly needed. If some of these permissions are intentional, document the justification and adjust the policy accordingly.\"}]}",
+   "final": {
+    "summary": "The pull request introduces an overly permissive IAM policy that allows all S3 actions on every bucket, posing a MEDIUM risk of accidental data exposure or deletion. Additionally, several Checkov best\u2011practice checks fail, indicating potential violations such as wildcard permissions, IAM actions, or root attachment. Reviewers should verify the intended permissions scope and ensure the policy aligns with least\u2011privilege principles before merging.",
+    "explanations": [
+     {
+      "why": "The policy grants \"s3:*\" on \"*\", meaning any user or service with this policy can perform any S3 operation on any bucket, which could lead to data leakage or accidental deletion.",
+      "fix": "Replace the wildcard action and resource with specific permissions and bucket ARNs. For example, set `\"Action\": [\"s3:ListBucket\", \"s3:GetObject\", \"s3:PutObject\"]` and `\"Resource\": [\"arn:aws:s3:::my-bucket\", \"arn:aws:s3:::my-bucket/*\"]` in the policy document."
+     },
+     {
+      "why": "The Checkov checks (CKV_AWS_288, CKV_AWS_289, CKV_AWS_290, CKV_AWS_355) flag common IAM best\u2011practice violations such as attaching policies to the root user, allowing wildcard actions/resources, and permitting IAM administrative actions.",
+      "fix": "Ensure the policy is attached only to specific roles/users, does not contain wildcard actions or resources, and does not grant IAM actions unless explicitly needed. If some of these permissions are intentional, document the justification and adjust the policy accordingly."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.72,
+   "tokens": [
+    776,
+    717
+   ]
+  },
+  "iam-policy-star": {
+   "first_text": "{\"summary\":\"The most critical issue is a wildcard IAM policy granting all actions on all resources, which could expose the account to accidental or malicious changes. Additionally, several Checkov best\u2011practice checks fail and should be reviewed to ensure compliance with organizational policies.\",\"explanations\":[{\"id\":1,\"why\":\"A policy that allows \\\"*\\\" on \\\"*\\\" gives unrestricted access, enabling any IAM user or role with this policy to modify or delete any resource, potentially compromising the entire AWS environment.\",\"fix\":\"Replace the wildcard actions and resources in the policy document with the specific actions (e.g., `s3:GetObject`, `ec2:StartInstances`) and resource ARNs that the deploy role actually needs. Remove any `\\\"*\\\":\\\"*\\\"` entries.\"},{\"id\":2,\"why\":\"Checkov reports that the policy does not meet several best\u2011practice checks (e.g., missing tags, least\u2011privilege restrictions, or encryption settings), which could lead to non\u2011compliant or insecure configurations.\",\"fix\":\"Review the policy against each CKV failure (CKV_AWS_286, CKV_AWS_287, CKV_AWS_288, CKV_AWS_289, CKV_AWS_290, CKV_AWS_355) and add the required attributes\u2014such as explicit resource ARNs, required tags, or encryption keys\u2014to satisfy the checks. Ensure the policy aligns with the organization\u2019s security guidelines.\"}]}",
+   "final": {
+    "summary": "The most critical issue is a wildcard IAM policy granting all actions on all resources, which could expose the account to accidental or malicious changes. Additionally, several Checkov best\u2011practice checks fail and should be reviewed to ensure compliance with organizational policies.",
+    "explanations": [
+     {
+      "why": "A policy that allows \"*\" on \"*\" gives unrestricted access, enabling any IAM user or role with this policy to modify or delete any resource, potentially compromising the entire AWS environment.",
+      "fix": "Replace the wildcard actions and resources in the policy document with the specific actions (e.g., `s3:GetObject`, `ec2:StartInstances`) and resource ARNs that the deploy role actually needs. Remove any `\"*\":\"*\"` entries."
+     },
+     {
+      "why": "Checkov reports that the policy does not meet several best\u2011practice checks (e.g., missing tags, least\u2011privilege restrictions, or encryption settings), which could lead to non\u2011compliant or insecure configurations.",
+      "fix": "Review the policy against each CKV failure (CKV_AWS_286, CKV_AWS_287, CKV_AWS_288, CKV_AWS_289, CKV_AWS_290, CKV_AWS_355) and add the required attributes\u2014such as explicit resource ARNs, required tags, or encryption keys\u2014to satisfy the checks. Ensure the policy aligns with the organization\u2019s security guidelines."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.51,
+   "tokens": [
+    784,
+    634
+   ]
+  },
+  "iam-role-inline-iam-star": {
+   "first_text": "{\"summary\":\"The pull request contains a high\u2011risk IAM policy that grants all actions on all resources, which could lead to privilege escalation. Additionally, several Checkov best\u2011practice checks failed, indicating other potential security or compliance issues that should be reviewed before merging.\",\"explanations\":[{\"id\":1,\"why\":\"The `aws_iam_role_policy.manage` policy allows `iam:*` on all resources, giving the role unrestricted control over IAM resources, which can lead to privilege escalation and accidental creation or deletion of roles, policies, or users.\",\"fix\":\"Revise the policy to only include the specific IAM actions required by the role and limit the resources to the necessary ARNs. If the role must not modify IAM resources, remove `iam:*` entirely.\"},{\"id\":2,\"why\":\"The Checkov checks CKV_AWS_286, CKV_AWS_287, CKV_AWS_289, and CKV_AWS_355 failed, indicating that the policy may lack recommended security controls such as permissions boundaries, least\u2011privilege action lists, or tagging requirements.\",\"fix\":\"Review the policy to ensure it complies with the failed Checkov checks\u2014add missing permissions boundaries, restrict actions to the minimum necessary set, and include required tags. If intentional, document the justification for the exception.\"}]}",
+   "final": {
+    "summary": "The pull request contains a high\u2011risk IAM policy that grants all actions on all resources, which could lead to privilege escalation. Additionally, several Checkov best\u2011practice checks failed, indicating other potential security or compliance issues that should be reviewed before merging.",
+    "explanations": [
+     {
+      "why": "The `aws_iam_role_policy.manage` policy allows `iam:*` on all resources, giving the role unrestricted control over IAM resources, which can lead to privilege escalation and accidental creation or deletion of roles, policies, or users.",
+      "fix": "Revise the policy to only include the specific IAM actions required by the role and limit the resources to the necessary ARNs. If the role must not modify IAM resources, remove `iam:*` entirely."
+     },
+     {
+      "why": "The Checkov checks CKV_AWS_286, CKV_AWS_287, CKV_AWS_289, and CKV_AWS_355 failed, indicating that the policy may lack recommended security controls such as permissions boundaries, least\u2011privilege action lists, or tagging requirements.",
+      "fix": "Review the policy to ensure it complies with the failed Checkov checks\u2014add missing permissions boundaries, restrict actions to the minimum necessary set, and include required tags. If intentional, document the justification for the exception."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.72,
+   "tokens": [
+    784,
+    537
+   ]
+  },
+  "iam-role-poweruser": {
+   "first_text": "{\"summary\":\"The change attaches the AWS managed PowerUserAccess policy to a role, which grants broad permissions and poses a medium privilege risk. Verify whether this level of access is necessary, and if not, narrow the permissions.\",\"explanations\":[{\"id\":1,\"why\":\"Attaching PowerUserAccess allows the role to perform almost any action in the account except IAM operations, increasing the risk of accidental or malicious changes to critical resources.\",\"fix\":\"Remove the attachment and replace it with a custom IAM policy that limits permissions to only the actions needed for the role's purpose. Alternatively, if full power is required, document the justification and add a lifecycle rule to prevent accidental removal.\"}]}",
+   "final": {
+    "summary": "The change attaches the AWS managed PowerUserAccess policy to a role, which grants broad permissions and poses a medium privilege risk. Verify whether this level of access is necessary, and if not, narrow the permissions.",
+    "explanations": [
+     {
+      "why": "Attaching PowerUserAccess allows the role to perform almost any action in the account except IAM operations, increasing the risk of accidental or malicious changes to critical resources.",
+      "fix": "Remove the attachment and replace it with a custom IAM policy that limits permissions to only the actions needed for the role's purpose. Alternatively, if full power is required, document the justification and add a lifecycle rule to prevent accidental removal."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.93,
+   "tokens": [
+    688,
+    207
+   ]
+  },
+  "iam-user-admin-attached": {
+   "first_text": "{\"summary\":\"The pull request attaches the AWS AdministratorAccess policy to a user, granting full administrative privileges and including wildcard actions, which poses a high security risk. Verify whether this level of access is truly required; otherwise remove or replace the policy with a least\u2011privilege custom policy that adheres to best practices.\",\"explanations\":[{\"id\":1,\"why\":\"Attaching the AWS managed AdministratorAccess policy gives the user unrestricted control over all AWS resources, which could lead to accidental or malicious changes across the entire account.\",\"fix\":\"Replace the `aws_iam_user_policy_attachment.admin` block with an attachment to a custom policy that only contains the actions required for the user's role, or delete the block entirely if the user should not have admin rights. For example, change the `policy_arn` to the ARN of a custom least\u2011privilege policy.\"},{\"id\":2,\"why\":\"The policy attached by this resource includes wildcard actions, violating Checkov CKV_AWS_40 and potentially allowing the user to execute any action on any resource.\",\"fix\":\"Edit the policy document referenced by the attachment to remove any `\\\"Action\\\": \\\"*\\\"` entries and specify only the necessary actions, or replace the policy with a more restrictive custom policy.\"}]}",
+   "final": {
+    "summary": "The pull request attaches the AWS AdministratorAccess policy to a user, granting full administrative privileges and including wildcard actions, which poses a high security risk. Verify whether this level of access is truly required; otherwise remove or replace the policy with a least\u2011privilege custom policy that adheres to best practices.",
+    "explanations": [
+     {
+      "why": "Attaching the AWS managed AdministratorAccess policy gives the user unrestricted control over all AWS resources, which could lead to accidental or malicious changes across the entire account.",
+      "fix": "Replace the `aws_iam_user_policy_attachment.admin` block with an attachment to a custom policy that only contains the actions required for the user's role, or delete the block entirely if the user should not have admin rights. For example, change the `policy_arn` to the ARN of a custom least\u2011privilege policy."
+     },
+     {
+      "why": "The policy attached by this resource includes wildcard actions, violating Checkov CKV_AWS_40 and potentially allowing the user to execute any action on any resource.",
+      "fix": "Edit the policy document referenced by the attachment to remove any `\"Action\": \"*\"` entries and specify only the necessary actions, or replace the policy with a more restrictive custom policy."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.56,
+   "tokens": [
+    753,
+    1011
+   ]
+  },
+  "injection-bucket-tag": {
+   "first_text": "{\"summary\":\"The plan will delete the S3 bucket aws_s3_bucket.data, permanently losing any data it contains. Confirm that this deletion is intentional and that the data is backed up or no longer needed.\",\"explanations\":[{\"id\":1,\"why\":\"Deleting the bucket removes all stored data; without a backup this data cannot be recovered.\",\"fix\":\"Add `lifecycle { prevent_destroy = true }` to the aws_s3_bucket.data resource to block accidental deletion, or explicitly verify that deletion is required and that the data is archived elsewhere.\"}]}",
+   "final": {
+    "summary": "The plan will delete the S3 bucket aws_s3_bucket.data, permanently losing any data it contains. Confirm that this deletion is intentional and that the data is backed up or no longer needed.",
+    "explanations": [
+     {
+      "why": "Deleting the bucket removes all stored data; without a backup this data cannot be recovered.",
+      "fix": "Add `lifecycle { prevent_destroy = true }` to the aws_s3_bucket.data resource to block accidental deletion, or explicitly verify that deletion is required and that the data is archived elsewhere."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 0.9,
+   "tokens": [
+    680,
+    350
+   ]
+  },
+  "injection-for-each-key": {
+   "first_text": "{\"summary\":\"The pull request will delete an S3 bucket that holds data, which could result in irreversible data loss. Verify that the deletion is intentional, that a backup exists, or add protection to prevent accidental removal.\",\"explanations\":[{\"id\":1,\"why\":\"Removing the aws_s3_bucket will permanently delete all objects inside it, potentially causing loss of critical data or backups.\",\"fix\":\"Add a lifecycle block to the aws_s3_bucket with `prevent_destroy = true` or confirm that you have a recent backup before allowing the deletion.\"}]}",
+   "final": {
+    "summary": "The pull request will delete an S3 bucket that holds data, which could result in irreversible data loss. Verify that the deletion is intentional, that a backup exists, or add protection to prevent accidental removal.",
+    "explanations": [
+     {
+      "why": "Removing the aws_s3_bucket will permanently delete all objects inside it, potentially causing loss of critical data or backups.",
+      "fix": "Add a lifecycle block to the aws_s3_bucket with `prevent_destroy = true` or confirm that you have a recent backup before allowing the deletion."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.26,
+   "tokens": [
+    710,
+    503
+   ]
+  },
+  "injection-sg-description": {
+   "first_text": "{\"summary\":\"The most critical risk is that the security group allows SSH from anywhere, exposing the instances to potential brute\u2011force attacks. A checkov warning also flags a likely over\u2011permissive rule on the same security group. Verify whether unrestricted SSH is intentional and limit the rule to known CIDRs or a bastion host before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Allowing SSH from 0.0.0.0/0 lets anyone on the internet attempt to connect, which can lead to unauthorized access or brute\u2011force attacks on the instances.\",\"fix\":\"Restrict the security group\u2019s `ingress` rule that permits TCP port 22 to a specific CIDR block (e.g., your corporate network) or route SSH through a bastion host, and remove the 0.0.0.0/0 rule.\"},{\"id\":2,\"why\":\"The Checkov CKV2_AWS_5 warning indicates that the security group rule likely violates a best\u2011practice, such as permitting unrestricted traffic on a port.\",\"fix\":\"Confirm the intent of the rule; if it is not required, tighten the `ingress` CIDR block or delete the rule. If it is intentional, document the justification and ensure it is the only open rule on that port.\"}]}",
+   "final": {
+    "summary": "The most critical risk is that the security group allows SSH from anywhere, exposing the instances to potential brute\u2011force attacks. A checkov warning also flags a likely over\u2011permissive rule on the same security group. Verify whether unrestricted SSH is intentional and limit the rule to known CIDRs or a bastion host before merging.",
+    "explanations": [
+     {
+      "why": "Allowing SSH from 0.0.0.0/0 lets anyone on the internet attempt to connect, which can lead to unauthorized access or brute\u2011force attacks on the instances.",
+      "fix": "Restrict the security group\u2019s `ingress` rule that permits TCP port 22 to a specific CIDR block (e.g., your corporate network) or route SSH through a bastion host, and remove the 0.0.0.0/0 rule."
+     },
+     {
+      "why": "The Checkov CKV2_AWS_5 warning indicates that the security group rule likely violates a best\u2011practice, such as permitting unrestricted traffic on a port.",
+      "fix": "Confirm the intent of the rule; if it is not required, tighten the `ingress` CIDR block or delete the rule. If it is intentional, document the justification and ensure it is the only open rule on that port."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 3.35,
+   "tokens": [
+    755,
+    575
+   ]
+  },
+  "s3-bucket-deleted": {
+   "first_text": "{\"summary\":\"The plan proposes deleting the S3 bucket aws_s3_bucket.data, which will permanently lose any stored data unless a backup is already in place. Verify whether the deletion is intentional and that data is preserved elsewhere before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Removing the bucket will delete all objects it contains; if these objects are not backed up, the loss is irreversible and could break applications relying on them.\",\"fix\":\"If the deletion is unintentional, remove the bucket resource from the plan. If intentional, add a `lifecycle { prevent_destroy = true }` block or migrate the data to a new bucket before applying the change.\"}]}",
+   "final": {
+    "summary": "The plan proposes deleting the S3 bucket aws_s3_bucket.data, which will permanently lose any stored data unless a backup is already in place. Verify whether the deletion is intentional and that data is preserved elsewhere before merging.",
+    "explanations": [
+     {
+      "why": "Removing the bucket will delete all objects it contains; if these objects are not backed up, the loss is irreversible and could break applications relying on them.",
+      "fix": "If the deletion is unintentional, remove the bucket resource from the plan. If intentional, add a `lifecycle { prevent_destroy = true }` block or migrate the data to a new bucket before applying the change."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 2.23,
+   "tokens": [
+    680,
+    760
+   ]
+  },
+  "s3-count-index-shift": {
+   "first_text": "{\"summary\":\"The PR deletes or replaces three S3 buckets that contain data; merging will cause data loss unless the data is backed up or the buckets are preserved. Verify that backups exist and confirm whether the bucket renames are intentional. The remaining Checkov warnings are low risk but should be reviewed.\",\"explanations\":[{\"id\":1,\"why\":\"Replacing a bucket forces its deletion and recreation, wiping any data stored in it.\",\"fix\":\"Confirm the bucket name is intentional; if not, keep the original `bucket` attribute or add a `lifecycle { ignore_changes = [bucket] }` block to prevent replacement, and ensure any existing data is backed up before merging.\"},{\"id\":2,\"why\":\"Same as above \u2013 replacement will delete bucket contents.\",\"fix\":\"Same as for ID 1: keep the name unchanged or ignore changes to the `bucket` field, and backup data.\"},{\"id\":3,\"why\":\"Deleting a bucket removes all stored objects permanently.\",\"fix\":\"Add `lifecycle { prevent_destroy = true }` to the bucket resource to stop accidental deletion, or first copy data out, then delete.\"},{\"id\":4,\"why\":\"The Checkov failures are low risk best\u2011practice violations; they may affect security or cost but are not critical.\",\"fix\":\"Review each listed Checkov rule, address any that apply to the changed resources, and document why any rule is intentionally ignored.\"}]}",
+   "final": {
+    "summary": "The PR deletes or replaces three S3 buckets that contain data; merging will cause data loss unless the data is backed up or the buckets are preserved. Verify that backups exist and confirm whether the bucket renames are intentional. The remaining Checkov warnings are low risk but should be reviewed.",
+    "explanations": [
+     {
+      "why": "Replacing a bucket forces its deletion and recreation, wiping any data stored in it.",
+      "fix": "Confirm the bucket name is intentional; if not, keep the original `bucket` attribute or add a `lifecycle { ignore_changes = [bucket] }` block to prevent replacement, and ensure any existing data is backed up before merging."
+     },
+     {
+      "why": "Same as above \u2013 replacement will delete bucket contents.",
+      "fix": "Same as for ID 1: keep the name unchanged or ignore changes to the `bucket` field, and backup data."
+     },
+     {
+      "why": "Deleting a bucket removes all stored objects permanently.",
+      "fix": "Add `lifecycle { prevent_destroy = true }` to the bucket resource to stop accidental deletion, or first copy data out, then delete."
+     },
+     {
+      "why": "The Checkov failures are low risk best\u2011practice violations; they may affect security or cost but are not critical.",
+      "fix": "Review each listed Checkov rule, address any that apply to the changed resources, and document why any rule is intentionally ignored."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.74,
+   "tokens": [
+    944,
+    995
+   ]
+  },
+  "s3-encryption-removed": {
+   "first_text": "{\"summary\":\"Deleting the S3 bucket server\u2011side encryption configuration will cause all new and existing objects to be stored without encryption. Verify that this is the intended behaviour or that encryption should be restored.\", \"explanations\":[{\"id\":1,\"why\":\"Removing the encryption configuration means that data in the bucket will be written and read without encryption, exposing it to potential compromise and violating compliance requirements.\",\"fix\":\"Re\u2011create the `aws_s3_bucket_server_side_encryption_configuration` block for the bucket, or add `lifecycle { prevent_destroy = true }` to protect it from accidental removal.\"}]}",
+   "final": {
+    "summary": "Deleting the S3 bucket server\u2011side encryption configuration will cause all new and existing objects to be stored without encryption. Verify that this is the intended behaviour or that encryption should be restored.",
+    "explanations": [
+     {
+      "why": "Removing the encryption configuration means that data in the bucket will be written and read without encryption, exposing it to potential compromise and violating compliance requirements.",
+      "fix": "Re\u2011create the `aws_s3_bucket_server_side_encryption_configuration` block for the bucket, or add `lifecycle { prevent_destroy = true }` to protect it from accidental removal."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.0,
+   "tokens": [
+    680,
+    483
+   ]
+  },
+  "s3-public-access-block-disabled": {
+   "first_text": "{\"summary\":\"The pull request leaves the S3 bucket exposed to public access, potentially leaking data. Verify that all public access blocking flags are set to true before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Without the public access block settings, the bucket could be read or written by anyone, exposing sensitive data or allowing malicious uploads.\",\"fix\":\"Set the four public access block attributes to true in the aws_s3_bucket_public_access_block resource: `block_public_acls = true`, `block_public_policy = true`, `ignore_public_acls = true`, and `restrict_public_buckets = true`.}}\"}]}",
+   "final": {
+    "summary": "The pull request leaves the S3 bucket exposed to public access, potentially leaking data. Verify that all public access blocking flags are set to true before merging.",
+    "explanations": [
+     {
+      "why": "Without the public access block settings, the bucket could be read or written by anyone, exposing sensitive data or allowing malicious uploads.",
+      "fix": "Set the four public access block attributes to true in the aws_s3_bucket_public_access_block resource: `block_public_acls = true`, `block_public_policy = true`, `ignore_public_acls = true`, and `restrict_public_buckets = true`.}}"
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.76,
+   "tokens": [
+    727,
+    621
+   ]
+  },
+  "s3-versioning-suspended": {
+   "first_text": "{\"summary\":\"The bucket has versioning disabled, exposing it to irreversible deletions or overwrites. Verify intent and, if not intentional, enable versioning to protect data.\",\"explanations\":[{\"id\":1,\"why\":\"With versioning off, any accidental or malicious delete or overwrite of an object is permanent and cannot be recovered, potentially leading to data loss.\",\"fix\":\"Modify the aws_s3_bucket_versioning.data resource to enable versioning, e.g., add `enabled = true` or set `versioning_configuration { status = \\\"Enabled\\\" }`. \"}] }",
+   "final": {
+    "summary": "The bucket has versioning disabled, exposing it to irreversible deletions or overwrites. Verify intent and, if not intentional, enable versioning to protect data.",
+    "explanations": [
+     {
+      "why": "Disabling versioning removes the audit trail and recovery capability for the bucket; any accidental deletion or overwrite would be permanent, leading to data loss.",
+      "fix": "Modify the `aws_s3_bucket_versioning.data` resource so that the versioning configuration is set to `Enabled` (e.g., by setting the status to \"Enabled\")."
+     }
+    ]
+   },
+   "requests": 2,
+   "dropped_fixes": 0,
+   "seconds": 5.88,
+   "tokens": [
+    1369,
+    1924
+   ]
+  },
+  "sg-all-ports-world": {
+   "first_text": "{\"summary\":\"The pull request opens the security group aws_security_group.app to all ports for the entire internet, creating a high risk. Additionally, a Checkov best\u2011practice rule CKV2_AWS_5 failed. Review the inbound rules and ensure only required ports and CIDR blocks are allowed before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Allowing 0.0.0.0/0 on all ports exposes the application to arbitrary traffic, enabling attackers to scan, brute\u2011force, or exploit any open port.\",\"fix\":\"Add specific inbound rules that limit traffic to the necessary ports and CIDR ranges, and remove the broad 0.0.0.0/0 rule.\"},{\"id\":2,\"why\":\"CKV2_AWS_5 warns that the security group does not follow recommended configuration, potentially allowing insecure access patterns.\",\"fix\":\"Review the rule to confirm it is intentional; if it is, add documentation; otherwise, adjust the security group rules to comply with the recommended practice.\"}]}",
+   "final": {
+    "summary": "The pull request opens the security group aws_security_group.app to all ports for the entire internet, creating a high risk. Additionally, a Checkov best\u2011practice rule CKV2_AWS_5 failed. Review the inbound rules and ensure only required ports and CIDR blocks are allowed before merging.",
+    "explanations": [
+     {
+      "why": "Allowing 0.0.0.0/0 on all ports exposes the application to arbitrary traffic, enabling attackers to scan, brute\u2011force, or exploit any open port.",
+      "fix": "Add specific inbound rules that limit traffic to the necessary ports and CIDR ranges, and remove the broad 0.0.0.0/0 rule."
+     },
+     {
+      "why": "CKV2_AWS_5 warns that the security group does not follow recommended configuration, potentially allowing insecure access patterns.",
+      "fix": "Review the rule to confirm it is intentional; if it is, add documentation; otherwise, adjust the security group rules to comply with the recommended practice."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.54,
+   "tokens": [
+    751,
+    726
+   ]
+  },
+  "sg-custom-port-world": {
+   "first_text": "{\"summary\":\"The main concern is that the security group `aws_security_group.app` exposes port 8080 to the entire internet, which could allow unauthorized access or attacks. Verify whether this port needs public access, and if not, restrict it to trusted CIDRs. Also ensure that the Checkov best\u2011practice failures are addressed before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Opening port 8080 to 0.0.0.0/0 lets any host on the internet reach the application, exposing it to brute\u2011force attacks, scanning, or exploitation of vulnerabilities.\",\"fix\":\"Replace the `0.0.0.0/0` source in the `ingress` rule with a more restrictive CIDR block, such as the VPC's CIDR or a specific trusted IP range, or add a `source_security_group_id` referencing a secure gateway.\"},{\"id\":2,\"why\":\"The Checkov best\u2011practice check CKV2_AWS_5 likely flags a security issue (e.g., missing description or name convention) on the security group, indicating a potential misconfiguration that could impact maintainability or compliance.\",\"fix\":\"Review the Checkov output for CKV2_AWS_5 and apply the suggested remediation, such as adding a descriptive `description` field or correcting the resource name to meet naming conventions. Ensure the security group still meets operational requirements after the change.\"}]}",
+   "final": {
+    "summary": "The main concern is that the security group `aws_security_group.app` exposes port 8080 to the entire internet, which could allow unauthorized access or attacks. Verify whether this port needs public access, and if not, restrict it to trusted CIDRs. Also ensure that the Checkov best\u2011practice failures are addressed before merging.",
+    "explanations": [
+     {
+      "why": "Opening port 8080 to 0.0.0.0/0 lets any host on the internet reach the application, exposing it to brute\u2011force attacks, scanning, or exploitation of vulnerabilities.",
+      "fix": ""
+     },
+     {
+      "why": "The Checkov best\u2011practice check CKV2_AWS_5 likely flags a security issue (e.g., missing description or name convention) on the security group, indicating a potential misconfiguration that could impact maintainability or compliance.",
+      "fix": "Review the Checkov output for CKV2_AWS_5 and apply the suggested remediation, such as adding a descriptive `description` field or correcting the resource name to meet naming conventions. Ensure the security group still meets operational requirements after the change."
+     }
+    ]
+   },
+   "requests": 2,
+   "dropped_fixes": 1,
+   "seconds": 3.28,
+   "tokens": [
+    1530,
+    1335
+   ]
+  },
+  "sg-ingress-rule-postgres-ipv6": {
+   "first_text": "{\"summary\":\"This PR opens PostgreSQL port 5432 to the entire IPv6 internet, a high\u2011risk exposure that could let attackers brute\u2011force credentials or exfiltrate data. Verify whether public access was intentional, and if not, restrict the rule before merging.\",\"explanations\":[{\"id\":1,\"why\":\"A rule that allows all IPv6 traffic to port 5432 exposes the database to anyone on the internet, creating a vector for credential theft, unauthorized data access, and potential pivot into the network.\",\"fix\":\"Limit the ingress rule to a specific CIDR block (e.g., a corporate IP range) or reference an internal security group via `source_security_group_id` instead of using `cidr_ipv6 = \\\"::/0\\\"`.\"}]}",
+   "final": {
+    "summary": "This PR opens PostgreSQL port 5432 to the entire IPv6 internet, a high\u2011risk exposure that could let attackers brute\u2011force credentials or exfiltrate data. Verify whether public access was intentional, and if not, restrict the rule before merging.",
+    "explanations": [
+     {
+      "why": "Allowing all IPv4 and IPv6 traffic to PostgreSQL lets anyone on the internet attempt to connect, potentially compromising the database.",
+      "fix": "Restrict the rule to a known CIDR block (e.g., `cidr_ipv4 = \"10.0.0.0/16\"`) and remove the `cidr_ipv6 = \"::/0\"` entry. If traffic should come from an internal security group, reference that group using the correct attribute name according to the provider\u2019s schema (verify the exact attribute in the resource documentation)."
+     }
+    ]
+   },
+   "requests": 2,
+   "dropped_fixes": 0,
+   "seconds": 3.99,
+   "tokens": [
+    1406,
+    1890
+   ]
+  },
+  "sg-inline-ssh-world": {
+   "error": "the answer is not a JSON object"
+  },
+  "sg-rule-rdp-world": {
+   "first_text": "{\"summary\":\"The pull request opens RDP to the internet, exposing instances to potential brute\u2011force attacks; verify that this is intentional or restrict access.\",\"explanations\":[{\"id\":1,\"why\":\"Allowing RDP from 0.0.0.0/0 means anyone on the internet can attempt to connect, increasing the risk of compromise via credential guessing or exploitation of vulnerabilities.\",\"fix\":\"Change the security group rule to limit `cidr_blocks` to a known IP range or use a bastion host. For example, set `cidr_blocks = [\\\"203.0.113.5/32\\\"]` or move the rule to a dedicated bastion SG.\"}]}",
+   "final": {
+    "summary": "The pull request opens RDP to the internet, exposing instances to potential brute\u2011force attacks; verify that this is intentional or restrict access.",
+    "explanations": [
+     {
+      "why": "Allowing RDP from 0.0.0.0/0 means anyone on the internet can attempt to connect, increasing the risk of compromise via credential guessing or exploitation of vulnerabilities.",
+      "fix": "Change the security group rule to limit `cidr_blocks` to a known IP range or use a bastion host. For example, set `cidr_blocks = [\"203.0.113.5/32\"]` or move the rule to a dedicated bastion SG."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 0.89,
+   "tokens": [
+    693,
+    411
+   ]
+  },
+  "sg-ssh-widened": {
+   "first_text": "{\"summary\":\"The pull request opens SSH to all internet IPs, a high\u2011risk exposure, and a Checkov best\u2011practice rule failed. Review the ingress rule, limit SSH access, and verify the Checkov warning.\",\"explanations\":[{\"id\":1,\"why\":\"Open SSH to 0.0.0.0/0 exposes all servers to brute\u2011force or compromise attempts.\",\"fix\":\"Modify the ingress rule in aws_security_group.app to restrict the source to trusted IP ranges, e.g., set `cidr_blocks = [\\\"<trusted-ip>/32\\\"]` or use a security group reference.\"},{\"id\":2,\"why\":\"A Checkov rule flagged a best\u2011practice violation; while low risk, it indicates a potentially overly permissive rule.\",\"fix\":\"Review the specific CKV2_AWS_5 requirement and adjust the security group accordingly \u2013 e.g., ensure egress or ingress rules specify explicit CIDR blocks rather than 0.0.0.0/0, or remove the default permissive rule.\"}]}",
+   "final": {
+    "summary": "The pull request opens SSH to all internet IPs, a high\u2011risk exposure, and a Checkov best\u2011practice rule failed. Review the ingress rule, limit SSH access, and verify the Checkov warning.",
+    "explanations": [
+     {
+      "why": "Open SSH to 0.0.0.0/0 exposes all servers to brute\u2011force or compromise attempts.",
+      "fix": "Modify the ingress rule in aws_security_group.app to restrict the source to trusted IP ranges, e.g., set `cidr_blocks = [\"<trusted-ip>/32\"]` or use a security group reference."
+     },
+     {
+      "why": "A Checkov rule flagged a best\u2011practice violation; while low risk, it indicates a potentially overly permissive rule.",
+      "fix": "Review the specific CKV2_AWS_5 requirement and adjust the security group accordingly \u2013 e.g., ensure egress or ingress rules specify explicit CIDR blocks rather than 0.0.0.0/0, or remove the default permissive rule."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 2.16,
+   "tokens": [
+    755,
+    1343
+   ]
+  },
+  "sqs-queue-deleted": {
+   "first_text": "{\"summary\":\"The pull request will delete aws_sqs_queue.jobs, a queue that holds data. This high\u2011risk change will permanently erase all messages unless a backup or migration has been performed. Verify that deletion is intentional and that any queued messages have been moved or archived before merging.\",\"explanations\":[{\"id\":1,\"why\":\"Removing the queue discards every message currently stored, which could contain critical job data that is not otherwise persisted.\",\"fix\":\"Add a lifecycle block to prevent accidental destroy: `lifecycle { prevent_destroy = true }` or remove the delete operation. If the queue is meant to be replaced, confirm that all existing messages have been migrated or archived elsewhere before the replacement.\"}]}",
+   "final": {
+    "summary": "The pull request will delete aws_sqs_queue.jobs, a queue that holds data. This high\u2011risk change will permanently erase all messages unless a backup or migration has been performed. Verify that deletion is intentional and that any queued messages have been moved or archived before merging.",
+    "explanations": [
+     {
+      "why": "Removing the queue discards every message currently stored, which could contain critical job data that is not otherwise persisted.",
+      "fix": "Add a lifecycle block to prevent accidental destroy: `lifecycle { prevent_destroy = true }` or remove the delete operation. If the queue is meant to be replaced, confirm that all existing messages have been migrated or archived elsewhere before the replacement."
+     }
+    ]
+   },
+   "requests": 1,
+   "dropped_fixes": 0,
+   "seconds": 1.92,
+   "tokens": [
+    680,
+    456
+   ]
+  }
+ }
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import os
+import re
 import sys
 from decimal import Decimal, InvalidOperation
 
@@ -12,9 +13,10 @@ from tf_reviewer.checkov import CheckovError, load_checkov
 from tf_reviewer.comment import format_comment
 from tf_reviewer.config import CONFIG_FILE_NAME, DEFAULT_CONFIG, ConfigError, find_config, load_config
 from tf_reviewer.cost import CostDiffError, load_cost_diff
-from tf_reviewer.llm import LLMError, explain, make_backend
-from tf_reviewer.plan import PlanError, load_plan
+from tf_reviewer.llm import LLMError, NameCheck, explain, make_backend
+from tf_reviewer.plan import PlanError, ResourceChange, load_plan
 from tf_reviewer.rules import Risk, evaluate, overall_risk
+from tf_reviewer.schema import NameChecker, SchemaError, load_schema
 from tf_reviewer.summary import format_cost, format_findings, format_summary
 
 
@@ -26,6 +28,24 @@ def _amount(text: str) -> Decimal:
     if amount < 0:
         raise argparse.ArgumentTypeError("must not be negative")
     return amount
+
+
+def _name_check(schema_file: str | None, changes: list[ResourceChange]) -> NameCheck | None:
+    """A check of the LLM's fixes against the provider schema, if one is given.
+
+    It only improves the explanations, so a missing or broken file is a warning, not an error.
+    """
+    if not schema_file:
+        return None
+    try:
+        checker = NameChecker.from_schema(load_schema(schema_file))
+    except (OSError, SchemaError) as e:
+        print(f"warning: provider schema not used: {e}", file=sys.stderr)
+        return None
+    types = {c.address: c.type for c in changes}
+    # Resource names from the plan (`orders` in aws_dynamodb_table.orders) may be quoted too.
+    labels = {name for address in types for name in re.findall(r"[a-z][a-z0-9_]*", address)}
+    return lambda finding, text: checker.unknown(text, types.get(finding.address, ""), labels)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -78,6 +98,11 @@ def main(argv: list[str] | None = None) -> int:
         default="never",
         help="exit with code 1 if the overall risk is at least this level (default: never)",
     )
+    parser.add_argument(
+        "--provider-schema",
+        metavar="FILE",
+        help="provider schema (`terraform providers schema -json`), to check the attributes the LLM names",
+    )
     args = parser.parse_args(argv)
 
     # Plans and Infracost output can contain any Unicode (e.g. "t3.medium → t3.xlarge").
@@ -108,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             backend = make_backend(config)
             if backend is not None:
-                review = explain(findings, backend)
+                review = explain(findings, backend, _name_check(args.provider_schema, changes))
         except LLMError as e:
             print(f"warning: no AI explanations: {e}", file=sys.stderr)
 

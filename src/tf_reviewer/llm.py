@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -38,7 +38,11 @@ You help engineers review Terraform pull requests. A rule-based checker has alre
 Terraform plan with the current infrastructure and found the risky changes listed in the user \
 message. Your job is to explain them to the reviewer.
 
-The user message is JSON: {"findings": [{"id", "rule_id", "risk", "address", "message"}, ...]}.
+The user message is JSON: {"findings": [{"id", "rule_id", "risk", "address", "message"}, ...]}. \
+A follow-up message may also have "unknown_names": {"<id>": ["<name>", ...]}: names your earlier \
+fix for that finding used that don't exist on the resource type, according to the provider's \
+schema. Rewrite those fixes without them; describe the change in words if you aren't sure of \
+the right name.
 
 How to treat the input:
 - The findings are facts decided by the checker. Don't add findings, drop findings, or change \
@@ -99,7 +103,7 @@ class Backend(Protocol):
 @dataclass(frozen=True)
 class Explanation:
     why: str
-    fix: str
+    fix: str  # "" if the fix was dropped because it kept naming attributes that don't exist
 
 
 @dataclass(frozen=True)
@@ -109,15 +113,25 @@ class Review:
     summary: str
     explanations: tuple[Explanation | None, ...]
     model: str
+    requests: int = 1  # 2 if fixes had to be rewritten
+    dropped_fixes: int = 0
 
 
-def build_request(findings: list[Finding]) -> str:
-    """The user message: the findings as JSON, numbered from 1."""
+# Checks one finding's explanation text; returns the names in it that don't exist (schema.py).
+NameCheck = Callable[[Finding, str], list[str]]
+
+
+def build_request(findings: list[Finding], unknown_names: Mapping[int, list[str]] | None = None) -> str:
+    """The user message: the findings as JSON, numbered from 1, plus, when asking for a
+    rewrite, the names each finding's earlier fix used that don't exist."""
     items = [
         {"id": i, "rule_id": f.rule_id, "risk": f.risk.name, "address": f.address, "message": f.message}
         for i, f in enumerate(findings, start=1)
     ]
-    return json.dumps({"findings": items}, indent=2)
+    request: dict = {"findings": items}
+    if unknown_names:
+        request["unknown_names"] = {str(i): names for i, names in sorted(unknown_names.items())}
+    return json.dumps(request, indent=2)
 
 
 def _text(value: object) -> str | None:
@@ -157,11 +171,48 @@ def parse_response(text: str, findings: list[Finding], model: str = "") -> Revie
     return Review(summary=summary, explanations=tuple(explanations), model=model)
 
 
-def explain(findings: list[Finding], backend: Backend) -> Review | None:
-    """Ask the backend to explain the findings. None if there's nothing to explain."""
+def _unknown(findings: list[Finding], review: Review, check: NameCheck) -> dict[int, list[str]]:
+    """For each explanation (by 1-based id), the names it uses that don't exist."""
+    unknown = {}
+    for i, (finding, explanation) in enumerate(zip(findings, review.explanations), start=1):
+        if explanation is not None and explanation.fix:
+            names = check(finding, f"{explanation.why} {explanation.fix}")
+            if names:
+                unknown[i] = names
+    return unknown
+
+
+def explain(findings: list[Finding], backend: Backend, check: NameCheck | None = None) -> Review | None:
+    """Ask the backend to explain the findings. None if there's nothing to explain.
+
+    With a name check, explanations that name attributes that don't exist are sent back once to
+    be rewritten. A rewrite that still fails, or a failed second request, keeps the "why" and
+    drops the fix: no fix is better than one that breaks `terraform plan`.
+    """
     if not findings:
         return None
-    return parse_response(backend.complete(SYSTEM_PROMPT, build_request(findings)), findings, backend.description)
+    first = parse_response(backend.complete(SYSTEM_PROMPT, build_request(findings)), findings, backend.description)
+    unknown = _unknown(findings, first, check) if check else {}
+    if not unknown:
+        return first
+
+    try:
+        text = backend.complete(SYSTEM_PROMPT, build_request(findings, unknown))
+        second = parse_response(text, findings, backend.description)
+        still_unknown = _unknown(findings, second, check)
+    except LLMError:
+        second, still_unknown = None, {}
+
+    explanations = list(first.explanations)
+    dropped = 0
+    for i in unknown:
+        rewrite = second.explanations[i - 1] if second else None
+        if rewrite is not None and i not in still_unknown:
+            explanations[i - 1] = rewrite
+        else:
+            explanations[i - 1] = Explanation(why=first.explanations[i - 1].why, fix="")
+            dropped += 1
+    return Review(first.summary, tuple(explanations), first.model, requests=2, dropped_fixes=dropped)
 
 
 class OpenAICompatibleBackend:

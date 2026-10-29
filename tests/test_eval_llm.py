@@ -49,6 +49,13 @@ def test_invented_names(text, resource_type, invented):
     assert evaluate_llm.invented_names(text, resource_type, SCHEMA) == invented
 
 
+def test_resource_names_from_the_plan_are_not_invented():
+    text = "Rename `orders` to `customer_orders` with a `moved` block."
+    assert evaluate_llm.invented_names(text, "aws_dynamodb_table", SCHEMA) == ["customer_orders", "orders"]
+    labels = frozenset({"aws_dynamodb_table", "orders", "customer_orders"})
+    assert evaluate_llm.invented_names(text, "aws_dynamodb_table", SCHEMA, labels) == []
+
+
 def _case(category="data-loss"):
     return {
         "name": "c",

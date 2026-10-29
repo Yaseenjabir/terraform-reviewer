@@ -67,7 +67,8 @@ def _finding(finding: Finding, review: Review | None, index: int) -> str:
     explanation = review.explanations[index] if review is not None else None
     if explanation is not None:
         lines.append(f"  - **Why:** {_text(explanation.why)}")
-        lines.append(f"  - **Fix:** {_text(explanation.fix)}")
+        if explanation.fix:
+            lines.append(f"  - **Fix:** {_text(explanation.fix)}")
     return "\n".join(lines)
 
 

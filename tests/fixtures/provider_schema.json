@@ -1,0 +1,25 @@
+{
+ "format_version": "1.0",
+ "provider_schemas": {
+  "registry.terraform.io/hashicorp/aws": {
+   "resource_schemas": {
+    "aws_security_group": {
+     "version": 1,
+     "block": {
+      "attributes": {
+       "name": {"type": "string", "optional": true},
+       "ingress": {"type": ["set", ["object", {"cidr_blocks": ["list", "string"], "from_port": "number", "to_port": "number"}]], "optional": true}
+      },
+      "block_types": {
+       "timeouts": {"nesting_mode": "single", "block": {"attributes": {"create": {"type": "string", "optional": true}}}}
+      }
+     }
+    },
+    "aws_s3_bucket": {
+     "version": 0,
+     "block": {"attributes": {"bucket": {"type": "string", "optional": true}}}
+    }
+   }
+  }
+ }
+}
