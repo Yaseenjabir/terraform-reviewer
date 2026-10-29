@@ -1,0 +1,5 @@
+description: AdministratorAccess is attached to a user.
+category: iam
+safe: false
+expect:
+  - {address: 'aws_iam_user_policy_attachment.admin', risk: HIGH, rule: admin-policy-attached}

@@ -1,0 +1,4 @@
+description: Ping (ICMP) is allowed from the internet.
+category: safe
+safe: true
+expect: []

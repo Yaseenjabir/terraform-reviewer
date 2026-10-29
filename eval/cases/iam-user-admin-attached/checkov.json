@@ -1,0 +1,31 @@
+{
+ "check_type": "terraform_plan",
+ "results": {
+  "failed_checks": [
+   {
+    "check_id": "CKV_AWS_273",
+    "check_name": "Ensure access is controlled through SSO and not AWS IAM defined users",
+    "resource": "aws_iam_user.ci",
+    "resource_address": "aws_iam_user.ci",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-273"
+   },
+   {
+    "check_id": "CKV_AWS_274",
+    "check_name": "Disallow IAM roles, users, and groups from using the AWS AdministratorAccess policy",
+    "resource": "aws_iam_user_policy_attachment.admin",
+    "resource_address": "aws_iam_user_policy_attachment.admin",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-274"
+   },
+   {
+    "check_id": "CKV_AWS_40",
+    "check_name": "Ensure IAM policies are attached only to groups or roles (Reducing access management complexity may in-turn reduce opportunity for a principal to inadvertently receive or retain excessive privileges.)",
+    "resource": "aws_iam_user_policy_attachment.admin",
+    "resource_address": "aws_iam_user_policy_attachment.admin",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/iam-16-iam-policy-privileges-1"
+   }
+  ]
+ },
+ "summary": {
+  "failed": 3
+ }
+}

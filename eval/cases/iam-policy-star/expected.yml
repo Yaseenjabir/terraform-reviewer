@@ -1,0 +1,5 @@
+description: A policy allows every action on every resource.
+category: iam
+safe: false
+expect:
+  - {address: 'aws_iam_policy.deploy', risk: HIGH, rule: iam-wildcard}

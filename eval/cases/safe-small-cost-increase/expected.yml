@@ -1,0 +1,5 @@
+description: Provisioned capacity goes from 5 to 10 units, a few dollars a month.
+category: safe
+safe: true
+cost: true
+expect: []

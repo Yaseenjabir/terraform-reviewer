@@ -1,0 +1,4 @@
+description: Only a bucket's tags change.
+category: safe
+safe: true
+expect: []

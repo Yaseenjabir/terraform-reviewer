@@ -1,0 +1,4 @@
+description: HTTPS is opened to the internet for a website.
+category: safe
+safe: true
+expect: []

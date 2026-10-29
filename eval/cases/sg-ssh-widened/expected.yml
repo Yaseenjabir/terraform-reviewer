@@ -1,0 +1,5 @@
+description: SSH that was limited to the private network is widened to the internet.
+category: open-network
+safe: false
+expect:
+  - {address: 'aws_security_group.app', risk: HIGH, rule: open-to-internet}

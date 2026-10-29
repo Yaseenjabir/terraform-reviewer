@@ -1,0 +1,4 @@
+description: A table is renamed with a moved block, so Terraform keeps it.
+category: safe
+safe: true
+expect: []

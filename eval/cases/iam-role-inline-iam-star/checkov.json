@@ -1,0 +1,45 @@
+{
+ "check_type": "terraform_plan",
+ "results": {
+  "failed_checks": [
+   {
+    "check_id": "CKV_AWS_287",
+    "check_name": "Ensure IAM policies does not allow credentials exposure",
+    "resource": "aws_iam_role_policy.manage",
+    "resource_address": "aws_iam_role_policy.manage",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-287"
+   },
+   {
+    "check_id": "CKV_AWS_289",
+    "check_name": "Ensure IAM policies does not allow permissions management / resource exposure without constraints",
+    "resource": "aws_iam_role_policy.manage",
+    "resource_address": "aws_iam_role_policy.manage",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-289"
+   },
+   {
+    "check_id": "CKV_AWS_286",
+    "check_name": "Ensure IAM policies does not allow privilege escalation",
+    "resource": "aws_iam_role_policy.manage",
+    "resource_address": "aws_iam_role_policy.manage",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-286"
+   },
+   {
+    "check_id": "CKV_AWS_355",
+    "check_name": "Ensure no IAM policies documents allow \"*\" as a statement's resource for restrictable actions",
+    "resource": "aws_iam_role_policy.manage",
+    "resource_address": "aws_iam_role_policy.manage",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-355"
+   },
+   {
+    "check_id": "CKV2_AWS_40",
+    "check_name": "Ensure AWS IAM policy does not allow full IAM privileges",
+    "resource": "aws_iam_role_policy.manage",
+    "resource_address": "aws_iam_role_policy.manage",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-2-40"
+   }
+  ]
+ },
+ "summary": {
+  "failed": 5
+ }
+}

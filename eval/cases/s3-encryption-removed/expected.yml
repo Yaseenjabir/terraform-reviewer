@@ -1,0 +1,5 @@
+description: A bucket's encryption configuration is removed.
+category: encryption
+safe: false
+expect:
+  - {address: 'aws_s3_bucket_server_side_encryption_configuration.data', risk: MEDIUM}

@@ -1,0 +1,4 @@
+description: ReadOnlyAccess is attached to a role.
+category: safe
+safe: true
+expect: []

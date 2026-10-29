@@ -1,0 +1,4 @@
+description: A bucket is added to a for_each set; the existing ones are untouched.
+category: safe
+safe: true
+expect: []

@@ -1,0 +1,4 @@
+description: A policy allows only reading and writing objects in one bucket.
+category: safe
+safe: true
+expect: []

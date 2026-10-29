@@ -1,0 +1,5 @@
+description: An application port (8080) is opened to the internet.
+category: open-network
+safe: false
+expect:
+  - {address: 'aws_security_group.app', risk: MEDIUM, rule: open-to-internet}

@@ -1,0 +1,5 @@
+description: Changing a table's hash key forces Terraform to destroy and recreate it.
+category: data-loss
+safe: false
+expect:
+  - {address: 'aws_dynamodb_table.table', risk: HIGH, rule: data-loss}

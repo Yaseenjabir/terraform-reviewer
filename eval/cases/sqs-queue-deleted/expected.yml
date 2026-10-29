@@ -1,0 +1,5 @@
+description: A queue that may hold unprocessed messages is deleted.
+category: data-loss
+safe: false
+expect:
+  - {address: 'aws_sqs_queue.jobs', risk: HIGH, rule: data-loss}

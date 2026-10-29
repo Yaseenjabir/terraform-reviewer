@@ -1,0 +1,592 @@
+{
+ "format_version": "1.2",
+ "terraform_version": "1.16.5",
+ "planned_values": {
+  "root_module": {
+   "resources": [
+    {
+     "address": "aws_dynamodb_table.customer_orders",
+     "mode": "managed",
+     "type": "aws_dynamodb_table",
+     "name": "customer_orders",
+     "provider_name": "registry.terraform.io/hashicorp/aws",
+     "schema_version": 1,
+     "values": {
+      "attribute": [
+       {
+        "name": "id",
+        "type": "S"
+       }
+      ],
+      "billing_mode": "PAY_PER_REQUEST",
+      "deletion_protection_enabled": null,
+      "hash_key": "id",
+      "import_table": [],
+      "local_secondary_index": [],
+      "name": "eval-orders",
+      "on_demand_throughput": [],
+      "range_key": null,
+      "region": "us-east-1",
+      "replica": [],
+      "restore_backup_arn": null,
+      "restore_date_time": null,
+      "restore_source_name": null,
+      "restore_source_table_arn": null,
+      "restore_to_latest_time": null,
+      "stream_enabled": null,
+      "table_class": null,
+      "tags": null,
+      "timeouts": null
+     },
+     "sensitive_values": {
+      "attribute": [
+       {}
+      ],
+      "global_secondary_index": [],
+      "global_table_witness": [],
+      "import_table": [],
+      "local_secondary_index": [],
+      "on_demand_throughput": [],
+      "point_in_time_recovery": [],
+      "replica": [],
+      "server_side_encryption": [],
+      "tags_all": {},
+      "ttl": [],
+      "warm_throughput": []
+     },
+     "identity_schema_version": 0,
+     "identity": {
+      "account_id": null,
+      "name": null,
+      "region": null
+     }
+    }
+   ]
+  }
+ },
+ "resource_drift": [
+  {
+   "address": "aws_dynamodb_table.orders",
+   "mode": "managed",
+   "type": "aws_dynamodb_table",
+   "name": "orders",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "update"
+    ],
+    "before": {
+     "arn": "arn:aws:dynamodb:us-east-1:000000000000:table/eval-orders",
+     "attribute": [
+      {
+       "name": "id",
+       "type": "S"
+      }
+     ],
+     "billing_mode": "PAY_PER_REQUEST",
+     "deletion_protection_enabled": false,
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "hash_key": "id",
+     "id": "eval-orders",
+     "import_table": [],
+     "local_secondary_index": [],
+     "name": "eval-orders",
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [
+      {
+       "enabled": false,
+       "recovery_period_in_days": 0
+      }
+     ],
+     "range_key": null,
+     "read_capacity": 0,
+     "region": "us-east-1",
+     "replica": [],
+     "restore_backup_arn": null,
+     "restore_date_time": null,
+     "restore_source_name": null,
+     "restore_source_table_arn": null,
+     "restore_to_latest_time": null,
+     "server_side_encryption": [],
+     "stream_arn": "",
+     "stream_enabled": false,
+     "stream_label": "",
+     "stream_view_type": "",
+     "table_class": "STANDARD",
+     "tags": null,
+     "tags_all": {},
+     "timeouts": null,
+     "ttl": [
+      {
+       "attribute_name": "",
+       "enabled": false
+      }
+     ],
+     "warm_throughput": [],
+     "write_capacity": 0
+    },
+    "after": {
+     "arn": "arn:aws:dynamodb:us-east-1:000000000000:table/eval-orders",
+     "attribute": [
+      {
+       "name": "id",
+       "type": "S"
+      }
+     ],
+     "billing_mode": "PAY_PER_REQUEST",
+     "deletion_protection_enabled": false,
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "hash_key": "id",
+     "id": "eval-orders",
+     "import_table": [],
+     "local_secondary_index": [],
+     "name": "eval-orders",
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [
+      {
+       "enabled": false,
+       "recovery_period_in_days": 0
+      }
+     ],
+     "range_key": null,
+     "read_capacity": 0,
+     "region": "us-east-1",
+     "replica": [],
+     "restore_backup_arn": null,
+     "restore_date_time": null,
+     "restore_source_name": null,
+     "restore_source_table_arn": null,
+     "restore_to_latest_time": null,
+     "server_side_encryption": [],
+     "stream_arn": "",
+     "stream_enabled": false,
+     "stream_label": "",
+     "stream_view_type": "",
+     "table_class": "STANDARD",
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "ttl": [
+      {
+       "attribute_name": "",
+       "enabled": false
+      }
+     ],
+     "warm_throughput": [],
+     "write_capacity": 0
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "attribute": [
+      {}
+     ],
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "import_table": [],
+     "local_secondary_index": [],
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [
+      {}
+     ],
+     "replica": [],
+     "server_side_encryption": [],
+     "tags_all": {},
+     "ttl": [
+      {}
+     ],
+     "warm_throughput": []
+    },
+    "after_sensitive": {
+     "attribute": [
+      {}
+     ],
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "import_table": [],
+     "local_secondary_index": [],
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [
+      {}
+     ],
+     "replica": [],
+     "server_side_encryption": [],
+     "tags": {},
+     "tags_all": {},
+     "ttl": [
+      {}
+     ],
+     "warm_throughput": []
+    }
+   }
+  }
+ ],
+ "resource_changes": [
+  {
+   "address": "aws_dynamodb_table.customer_orders",
+   "mode": "managed",
+   "type": "aws_dynamodb_table",
+   "name": "customer_orders",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "attribute": [
+      {
+       "name": "id",
+       "type": "S"
+      }
+     ],
+     "billing_mode": "PAY_PER_REQUEST",
+     "deletion_protection_enabled": null,
+     "hash_key": "id",
+     "import_table": [],
+     "local_secondary_index": [],
+     "name": "eval-orders",
+     "on_demand_throughput": [],
+     "range_key": null,
+     "region": "us-east-1",
+     "replica": [],
+     "restore_backup_arn": null,
+     "restore_date_time": null,
+     "restore_source_name": null,
+     "restore_source_table_arn": null,
+     "restore_to_latest_time": null,
+     "stream_enabled": null,
+     "table_class": null,
+     "tags": null,
+     "timeouts": null
+    },
+    "after_unknown": {
+     "arn": true,
+     "attribute": [
+      {}
+     ],
+     "global_secondary_index": true,
+     "global_table_witness": true,
+     "id": true,
+     "import_table": [],
+     "local_secondary_index": [],
+     "on_demand_throughput": [],
+     "point_in_time_recovery": true,
+     "read_capacity": true,
+     "replica": [],
+     "server_side_encryption": true,
+     "stream_arn": true,
+     "stream_label": true,
+     "stream_view_type": true,
+     "tags_all": true,
+     "ttl": true,
+     "warm_throughput": true,
+     "write_capacity": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {
+     "attribute": [
+      {}
+     ],
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "import_table": [],
+     "local_secondary_index": [],
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [],
+     "replica": [],
+     "server_side_encryption": [],
+     "tags_all": {},
+     "ttl": [],
+     "warm_throughput": []
+    },
+    "after_identity": {
+     "account_id": null,
+     "name": null,
+     "region": null
+    }
+   }
+  },
+  {
+   "address": "aws_dynamodb_table.orders",
+   "mode": "managed",
+   "type": "aws_dynamodb_table",
+   "name": "orders",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "delete"
+    ],
+    "before": {
+     "arn": "arn:aws:dynamodb:us-east-1:000000000000:table/eval-orders",
+     "attribute": [
+      {
+       "name": "id",
+       "type": "S"
+      }
+     ],
+     "billing_mode": "PAY_PER_REQUEST",
+     "deletion_protection_enabled": false,
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "hash_key": "id",
+     "id": "eval-orders",
+     "import_table": [],
+     "local_secondary_index": [],
+     "name": "eval-orders",
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [
+      {
+       "enabled": false,
+       "recovery_period_in_days": 0
+      }
+     ],
+     "range_key": null,
+     "read_capacity": 0,
+     "region": "us-east-1",
+     "replica": [],
+     "restore_backup_arn": null,
+     "restore_date_time": null,
+     "restore_source_name": null,
+     "restore_source_table_arn": null,
+     "restore_to_latest_time": null,
+     "server_side_encryption": [],
+     "stream_arn": "",
+     "stream_enabled": false,
+     "stream_label": "",
+     "stream_view_type": "",
+     "table_class": "STANDARD",
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "ttl": [
+      {
+       "attribute_name": "",
+       "enabled": false
+      }
+     ],
+     "warm_throughput": [],
+     "write_capacity": 0
+    },
+    "after": null,
+    "after_unknown": {},
+    "before_sensitive": {
+     "attribute": [
+      {}
+     ],
+     "global_secondary_index": [],
+     "global_table_witness": [],
+     "import_table": [],
+     "local_secondary_index": [],
+     "on_demand_throughput": [],
+     "point_in_time_recovery": [
+      {}
+     ],
+     "replica": [],
+     "server_side_encryption": [],
+     "tags": {},
+     "tags_all": {},
+     "ttl": [
+      {}
+     ],
+     "warm_throughput": []
+    },
+    "after_sensitive": false,
+    "before_identity": {
+     "account_id": "",
+     "name": "eval-orders",
+     "region": "us-east-1"
+    }
+   },
+   "action_reason": "delete_because_no_resource_config"
+  }
+ ],
+ "prior_state": {
+  "format_version": "1.0",
+  "terraform_version": "1.16.5",
+  "values": {
+   "root_module": {
+    "resources": [
+     {
+      "address": "aws_dynamodb_table.orders",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "orders",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "schema_version": 1,
+      "values": {
+       "arn": "arn:aws:dynamodb:us-east-1:000000000000:table/eval-orders",
+       "attribute": [
+        {
+         "name": "id",
+         "type": "S"
+        }
+       ],
+       "billing_mode": "PAY_PER_REQUEST",
+       "deletion_protection_enabled": false,
+       "global_secondary_index": [],
+       "global_table_witness": [],
+       "hash_key": "id",
+       "id": "eval-orders",
+       "import_table": [],
+       "local_secondary_index": [],
+       "name": "eval-orders",
+       "on_demand_throughput": [],
+       "point_in_time_recovery": [
+        {
+         "enabled": false,
+         "recovery_period_in_days": 0
+        }
+       ],
+       "range_key": null,
+       "read_capacity": 0,
+       "region": "us-east-1",
+       "replica": [],
+       "restore_backup_arn": null,
+       "restore_date_time": null,
+       "restore_source_name": null,
+       "restore_source_table_arn": null,
+       "restore_to_latest_time": null,
+       "server_side_encryption": [],
+       "stream_arn": "",
+       "stream_enabled": false,
+       "stream_label": "",
+       "stream_view_type": "",
+       "table_class": "STANDARD",
+       "tags": {},
+       "tags_all": {},
+       "timeouts": null,
+       "ttl": [
+        {
+         "attribute_name": "",
+         "enabled": false
+        }
+       ],
+       "warm_throughput": [],
+       "write_capacity": 0
+      },
+      "sensitive_values": {
+       "attribute": [
+        {}
+       ],
+       "global_secondary_index": [],
+       "global_table_witness": [],
+       "import_table": [],
+       "local_secondary_index": [],
+       "on_demand_throughput": [],
+       "point_in_time_recovery": [
+        {}
+       ],
+       "replica": [],
+       "server_side_encryption": [],
+       "tags": {},
+       "tags_all": {},
+       "ttl": [
+        {}
+       ],
+       "warm_throughput": []
+      },
+      "identity_schema_version": 0,
+      "identity": {
+       "account_id": "",
+       "name": "eval-orders",
+       "region": "us-east-1"
+      }
+     }
+    ]
+   }
+  }
+ },
+ "configuration": {
+  "provider_config": {
+   "aws": {
+    "name": "aws",
+    "full_name": "registry.terraform.io/hashicorp/aws",
+    "version_constraint": "~> 6.0",
+    "expressions": {
+     "access_key": {
+      "constant_value": "test"
+     },
+     "endpoints": [
+      {
+       "dynamodb": {
+        "constant_value": "http://localhost:4566"
+       },
+       "ec2": {
+        "constant_value": "http://localhost:4566"
+       },
+       "iam": {
+        "constant_value": "http://localhost:4566"
+       },
+       "s3": {
+        "constant_value": "http://localhost:4566"
+       },
+       "sqs": {
+        "constant_value": "http://localhost:4566"
+       },
+       "sts": {
+        "constant_value": "http://localhost:4566"
+       }
+      }
+     ],
+     "region": {
+      "constant_value": "us-east-1"
+     },
+     "s3_use_path_style": {
+      "constant_value": true
+     },
+     "secret_key": {
+      "constant_value": "test"
+     },
+     "skip_credentials_validation": {
+      "constant_value": true
+     },
+     "skip_metadata_api_check": {
+      "constant_value": true
+     },
+     "skip_requesting_account_id": {
+      "constant_value": true
+     }
+    }
+   }
+  },
+  "root_module": {
+   "resources": [
+    {
+     "address": "aws_dynamodb_table.customer_orders",
+     "mode": "managed",
+     "type": "aws_dynamodb_table",
+     "name": "customer_orders",
+     "provider_config_key": "aws",
+     "expressions": {
+      "attribute": [
+       {
+        "name": {
+         "constant_value": "id"
+        },
+        "type": {
+         "constant_value": "S"
+        }
+       }
+      ],
+      "billing_mode": {
+       "constant_value": "PAY_PER_REQUEST"
+      },
+      "hash_key": {
+       "constant_value": "id"
+      },
+      "name": {
+       "constant_value": "eval-orders"
+      }
+     },
+     "schema_version": 1
+    }
+   ]
+  }
+ },
+ "timestamp": "2026-10-29T08:44:22Z",
+ "applyable": true,
+ "complete": true,
+ "errored": false
+}

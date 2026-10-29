@@ -1,0 +1,5 @@
+description: A table's resource name changes without a moved block, so Terraform deletes it and creates a new empty one.
+category: data-loss
+safe: false
+expect:
+  - {address: 'aws_dynamodb_table.orders', risk: HIGH, rule: data-loss}

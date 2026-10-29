@@ -1,0 +1,5 @@
+description: A bucket's public access block is turned off.
+category: public-access
+safe: false
+expect:
+  - {address: 'aws_s3_bucket_public_access_block.data', risk: HIGH}

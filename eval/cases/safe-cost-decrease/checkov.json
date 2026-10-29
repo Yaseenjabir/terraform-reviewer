@@ -1,0 +1,31 @@
+{
+ "check_type": "terraform_plan",
+ "results": {
+  "failed_checks": [
+   {
+    "check_id": "CKV_AWS_28",
+    "check_name": "Ensure DynamoDB point in time recovery (backup) is enabled",
+    "resource": "aws_dynamodb_table.events",
+    "resource_address": "aws_dynamodb_table.events",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/general-6"
+   },
+   {
+    "check_id": "CKV_AWS_119",
+    "check_name": "Ensure DynamoDB Tables are encrypted using a KMS Customer Managed CMK",
+    "resource": "aws_dynamodb_table.events",
+    "resource_address": "aws_dynamodb_table.events",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/bc-aws-52"
+   },
+   {
+    "check_id": "CKV2_AWS_16",
+    "check_name": "Ensure that Auto Scaling is enabled on your DynamoDB tables",
+    "resource": "aws_dynamodb_table.events",
+    "resource_address": "aws_dynamodb_table.events",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-auto-scaling-is-enabled-on-your-dynamodb-tables"
+   }
+  ]
+ },
+ "summary": {
+  "failed": 3
+ }
+}

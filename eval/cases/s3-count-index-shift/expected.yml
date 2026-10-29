@@ -1,0 +1,7 @@
+description: Removing the first item of a count list shifts every index, so the remaining buckets are replaced.
+category: data-loss
+safe: false
+expect:
+  - {address: 'aws_s3_bucket.b[0]', risk: HIGH, rule: data-loss}
+  - {address: 'aws_s3_bucket.b[1]', risk: HIGH, rule: data-loss}
+  - {address: 'aws_s3_bucket.b[2]', risk: HIGH, rule: data-loss}

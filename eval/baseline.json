@@ -1,0 +1,100 @@
+{
+  "cases": 37,
+  "risky": 23,
+  "safe": 14,
+  "caught": [
+    "cost-dynamodb-capacity-jump",
+    "dynamodb-forced-replacement",
+    "dynamodb-renamed-without-moved",
+    "iam-policy-service-wildcard",
+    "iam-policy-star",
+    "iam-role-inline-iam-star",
+    "iam-role-poweruser",
+    "iam-user-admin-attached",
+    "injection-bucket-tag",
+    "injection-sg-description",
+    "s3-bucket-deleted",
+    "s3-count-index-shift",
+    "s3-encryption-removed",
+    "s3-public-access-block-disabled",
+    "sg-all-ports-world",
+    "sg-custom-port-world",
+    "sg-ingress-rule-postgres-ipv6",
+    "sg-inline-ssh-world",
+    "sg-rule-rdp-world",
+    "sg-ssh-widened",
+    "sqs-queue-deleted"
+  ],
+  "false_alarms": [],
+  "checkov_caught": [
+    "cost-dynamodb-capacity-jump",
+    "dynamodb-forced-replacement",
+    "dynamodb-pitr-disabled",
+    "iam-policy-service-wildcard",
+    "iam-policy-star",
+    "iam-role-inline-iam-star",
+    "iam-user-admin-attached",
+    "injection-sg-description",
+    "s3-public-access-block-disabled",
+    "sg-all-ports-world",
+    "sg-custom-port-world",
+    "sg-inline-ssh-world",
+    "sg-ssh-widened"
+  ],
+  "checkov_false_alarms": [
+    "safe-cost-decrease",
+    "safe-for-each-add",
+    "safe-new-dynamodb-table",
+    "safe-no-changes",
+    "safe-rename-with-moved",
+    "safe-sg-egress-all",
+    "safe-sg-https-world",
+    "safe-sg-icmp-world",
+    "safe-sg-ssh-private",
+    "safe-small-cost-increase",
+    "safe-tags-only"
+  ],
+  "extra_findings": 0,
+  "categories": {
+    "backups": {
+      "cases": 2,
+      "caught": 0,
+      "checkov_caught": 1
+    },
+    "cost": {
+      "cases": 1,
+      "caught": 1,
+      "checkov_caught": 1
+    },
+    "data-loss": {
+      "cases": 5,
+      "caught": 5,
+      "checkov_caught": 1
+    },
+    "encryption": {
+      "cases": 1,
+      "caught": 1,
+      "checkov_caught": 0
+    },
+    "iam": {
+      "cases": 5,
+      "caught": 5,
+      "checkov_caught": 4
+    },
+    "open-network": {
+      "cases": 6,
+      "caught": 6,
+      "checkov_caught": 4
+    },
+    "prompt-injection": {
+      "cases": 2,
+      "caught": 2,
+      "checkov_caught": 1
+    },
+    "public-access": {
+      "cases": 1,
+      "caught": 1,
+      "checkov_caught": 1
+    }
+  }
+}

@@ -1,0 +1,5 @@
+description: PowerUserAccess is attached to a role.
+category: iam
+safe: false
+expect:
+  - {address: 'aws_iam_role_policy_attachment.power', risk: MEDIUM, rule: admin-policy-attached}

@@ -1,0 +1,4 @@
+description: Outbound traffic to anywhere is allowed (the AWS default).
+category: safe
+safe: true
+expect: []

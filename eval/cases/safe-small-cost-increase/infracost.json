@@ -1,0 +1,80 @@
+{
+ "currency": "USD",
+ "pastTotalMonthlyCost": "2.847",
+ "totalMonthlyCost": "5.694",
+ "diffTotalMonthlyCost": "2.847",
+ "projects": [
+  {
+   "diff": {
+    "resources": [
+     {
+      "name": "aws_dynamodb_table.events",
+      "monthlyCost": "5.694",
+      "costComponents": [
+       {
+        "name": "Write capacity unit (WCU)",
+        "monthlyCost": "4.745"
+       },
+       {
+        "name": "Read capacity unit (RCU)",
+        "monthlyCost": "0.949"
+       },
+       {
+        "name": "Data storage",
+        "monthlyCost": null
+       },
+       {
+        "name": "On-demand backup storage",
+        "monthlyCost": null
+       },
+       {
+        "name": "Table data restored",
+        "monthlyCost": null
+       },
+       {
+        "name": "Streams read request unit (sRRU)",
+        "monthlyCost": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "diff": {
+    "resources": [
+     {
+      "name": "aws_dynamodb_table.events",
+      "monthlyCost": "-2.847",
+      "costComponents": [
+       {
+        "name": "Write capacity unit (WCU)",
+        "monthlyCost": "-2.3725"
+       },
+       {
+        "name": "Read capacity unit (RCU)",
+        "monthlyCost": "-0.4745"
+       },
+       {
+        "name": "Data storage",
+        "monthlyCost": "0"
+       },
+       {
+        "name": "On-demand backup storage",
+        "monthlyCost": "0"
+       },
+       {
+        "name": "Table data restored",
+        "monthlyCost": "0"
+       },
+       {
+        "name": "Streams read request unit (sRRU)",
+        "monthlyCost": "0"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

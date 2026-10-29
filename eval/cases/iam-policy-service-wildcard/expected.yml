@@ -1,0 +1,5 @@
+description: A policy allows every S3 action.
+category: iam
+safe: false
+expect:
+  - {address: 'aws_iam_policy.deploy', risk: MEDIUM, rule: iam-wildcard}

@@ -1,0 +1,321 @@
+{
+ "format_version": "1.2",
+ "terraform_version": "1.16.5",
+ "planned_values": {
+  "root_module": {
+   "resources": [
+    {
+     "address": "aws_iam_user.ci",
+     "mode": "managed",
+     "type": "aws_iam_user",
+     "name": "ci",
+     "provider_name": "registry.terraform.io/hashicorp/aws",
+     "schema_version": 0,
+     "values": {
+      "arn": "arn:aws:iam::000000000000:user/eval-ci",
+      "force_destroy": false,
+      "id": "eval-ci",
+      "name": "eval-ci",
+      "path": "/",
+      "permissions_boundary": "",
+      "tags": {},
+      "tags_all": {},
+      "unique_id": "AIDAQAAAAAAAAA6F2TYMP"
+     },
+     "sensitive_values": {
+      "tags": {},
+      "tags_all": {}
+     },
+     "identity_schema_version": 0,
+     "identity": {
+      "account_id": "",
+      "name": "eval-ci"
+     }
+    },
+    {
+     "address": "aws_iam_user_policy_attachment.admin",
+     "mode": "managed",
+     "type": "aws_iam_user_policy_attachment",
+     "name": "admin",
+     "provider_name": "registry.terraform.io/hashicorp/aws",
+     "schema_version": 0,
+     "values": {
+      "policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "user": "eval-ci"
+     },
+     "sensitive_values": {},
+     "identity_schema_version": 0,
+     "identity": {
+      "account_id": null,
+      "policy_arn": null,
+      "user": null
+     }
+    }
+   ]
+  }
+ },
+ "resource_drift": [
+  {
+   "address": "aws_iam_user.ci",
+   "mode": "managed",
+   "type": "aws_iam_user",
+   "name": "ci",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "update"
+    ],
+    "before": {
+     "arn": "arn:aws:iam::000000000000:user/eval-ci",
+     "force_destroy": false,
+     "id": "eval-ci",
+     "name": "eval-ci",
+     "path": "/",
+     "permissions_boundary": "",
+     "tags": null,
+     "tags_all": {},
+     "unique_id": "AIDAQAAAAAAAAA6F2TYMP"
+    },
+    "after": {
+     "arn": "arn:aws:iam::000000000000:user/eval-ci",
+     "force_destroy": false,
+     "id": "eval-ci",
+     "name": "eval-ci",
+     "path": "/",
+     "permissions_boundary": "",
+     "tags": {},
+     "tags_all": {},
+     "unique_id": "AIDAQAAAAAAAAA6F2TYMP"
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "tags_all": {}
+    },
+    "after_sensitive": {
+     "tags": {},
+     "tags_all": {}
+    }
+   }
+  }
+ ],
+ "resource_changes": [
+  {
+   "address": "aws_iam_user.ci",
+   "mode": "managed",
+   "type": "aws_iam_user",
+   "name": "ci",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "no-op"
+    ],
+    "before": {
+     "arn": "arn:aws:iam::000000000000:user/eval-ci",
+     "force_destroy": false,
+     "id": "eval-ci",
+     "name": "eval-ci",
+     "path": "/",
+     "permissions_boundary": "",
+     "tags": {},
+     "tags_all": {},
+     "unique_id": "AIDAQAAAAAAAAA6F2TYMP"
+    },
+    "after": {
+     "arn": "arn:aws:iam::000000000000:user/eval-ci",
+     "force_destroy": false,
+     "id": "eval-ci",
+     "name": "eval-ci",
+     "path": "/",
+     "permissions_boundary": "",
+     "tags": {},
+     "tags_all": {},
+     "unique_id": "AIDAQAAAAAAAAA6F2TYMP"
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "tags": {},
+     "tags_all": {}
+    },
+    "after_sensitive": {
+     "tags": {},
+     "tags_all": {}
+    },
+    "before_identity": {
+     "account_id": "",
+     "name": "eval-ci"
+    },
+    "after_identity": {
+     "account_id": "",
+     "name": "eval-ci"
+    }
+   }
+  },
+  {
+   "address": "aws_iam_user_policy_attachment.admin",
+   "mode": "managed",
+   "type": "aws_iam_user_policy_attachment",
+   "name": "admin",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+     "user": "eval-ci"
+    },
+    "after_unknown": {
+     "id": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {},
+    "after_identity": {
+     "account_id": null,
+     "policy_arn": null,
+     "user": null
+    }
+   }
+  }
+ ],
+ "prior_state": {
+  "format_version": "1.0",
+  "terraform_version": "1.16.5",
+  "values": {
+   "root_module": {
+    "resources": [
+     {
+      "address": "aws_iam_user.ci",
+      "mode": "managed",
+      "type": "aws_iam_user",
+      "name": "ci",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "schema_version": 0,
+      "values": {
+       "arn": "arn:aws:iam::000000000000:user/eval-ci",
+       "force_destroy": false,
+       "id": "eval-ci",
+       "name": "eval-ci",
+       "path": "/",
+       "permissions_boundary": "",
+       "tags": {},
+       "tags_all": {},
+       "unique_id": "AIDAQAAAAAAAAA6F2TYMP"
+      },
+      "sensitive_values": {
+       "tags": {},
+       "tags_all": {}
+      },
+      "identity_schema_version": 0,
+      "identity": {
+       "account_id": "",
+       "name": "eval-ci"
+      }
+     }
+    ]
+   }
+  }
+ },
+ "configuration": {
+  "provider_config": {
+   "aws": {
+    "name": "aws",
+    "full_name": "registry.terraform.io/hashicorp/aws",
+    "version_constraint": "~> 6.0",
+    "expressions": {
+     "access_key": {
+      "constant_value": "test"
+     },
+     "endpoints": [
+      {
+       "dynamodb": {
+        "constant_value": "http://localhost:4566"
+       },
+       "ec2": {
+        "constant_value": "http://localhost:4566"
+       },
+       "iam": {
+        "constant_value": "http://localhost:4566"
+       },
+       "s3": {
+        "constant_value": "http://localhost:4566"
+       },
+       "sqs": {
+        "constant_value": "http://localhost:4566"
+       },
+       "sts": {
+        "constant_value": "http://localhost:4566"
+       }
+      }
+     ],
+     "region": {
+      "constant_value": "us-east-1"
+     },
+     "s3_use_path_style": {
+      "constant_value": true
+     },
+     "secret_key": {
+      "constant_value": "test"
+     },
+     "skip_credentials_validation": {
+      "constant_value": true
+     },
+     "skip_metadata_api_check": {
+      "constant_value": true
+     },
+     "skip_requesting_account_id": {
+      "constant_value": true
+     }
+    }
+   }
+  },
+  "root_module": {
+   "resources": [
+    {
+     "address": "aws_iam_user.ci",
+     "mode": "managed",
+     "type": "aws_iam_user",
+     "name": "ci",
+     "provider_config_key": "aws",
+     "expressions": {
+      "name": {
+       "constant_value": "eval-ci"
+      }
+     },
+     "schema_version": 0
+    },
+    {
+     "address": "aws_iam_user_policy_attachment.admin",
+     "mode": "managed",
+     "type": "aws_iam_user_policy_attachment",
+     "name": "admin",
+     "provider_config_key": "aws",
+     "expressions": {
+      "policy_arn": {
+       "constant_value": "arn:aws:iam::aws:policy/AdministratorAccess"
+      },
+      "user": {
+       "references": [
+        "aws_iam_user.ci.name",
+        "aws_iam_user.ci"
+       ]
+      }
+     },
+     "schema_version": 0
+    }
+   ]
+  }
+ },
+ "relevant_attributes": [
+  {
+   "resource": "aws_iam_user.ci",
+   "attribute": [
+    "name"
+   ]
+  }
+ ],
+ "timestamp": "2026-10-29T08:47:05Z",
+ "applyable": true,
+ "complete": true,
+ "errored": false
+}

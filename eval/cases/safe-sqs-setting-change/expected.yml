@@ -1,0 +1,4 @@
+description: A queue's visibility timeout changes in place.
+category: safe
+safe: true
+expect: []
