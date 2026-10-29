@@ -71,6 +71,11 @@ def _terraform_dir(case: Path, tf_file: str, lock_file: Path) -> Path:
     return work
 
 
+def _write_json(path: Path, data: object) -> None:
+    # LF line endings on every OS, matching .gitattributes.
+    path.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+
 def _trim_checkov(raw: str) -> dict:
     data = json.loads(raw)
     reports = data if isinstance(data, list) else [data]
@@ -123,12 +128,12 @@ def generate(case: Path, lock_file: Path) -> None:
             shutil.copy(case / "after.tf", work / "main.tf")
         _run(["terraform", "plan", "-input=false", "-out=tfplan"], work)
         plan = _run(["terraform", "show", "-json", "tfplan"], work).stdout
-        (case / "plan.json").write_text(json.dumps(json.loads(plan), indent=1) + "\n", encoding="utf-8")
+        _write_json(case / "plan.json", json.loads(plan))
         (work / "plan.json").write_text(plan, encoding="utf-8")
 
         # Checkov exits 1 when checks fail; that's expected.
         checkov = _run(["checkov", "-f", "plan.json", "--framework", "terraform_plan", "-o", "json", "--quiet"], work, check=False)
-        (case / "checkov.json").write_text(json.dumps(_trim_checkov(checkov.stdout), indent=1) + "\n", encoding="utf-8")
+        _write_json(case / "checkov.json", _trim_checkov(checkov.stdout))
 
         if expected.get("cost"):
             _price(case, work)
@@ -157,7 +162,7 @@ def _price(case: Path, work: Path) -> None:
             work,
         )
         data = json.loads(diff.read_text(encoding="utf-8"))
-        (case / "infracost.json").write_text(json.dumps(_trim_infracost(data), indent=1) + "\n", encoding="utf-8")
+        _write_json(case / "infracost.json", _trim_infracost(data))
     finally:
         shutil.rmtree(before, ignore_errors=True)
         shutil.rmtree(after, ignore_errors=True)
