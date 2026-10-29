@@ -38,6 +38,23 @@ class PlanError(ValueError):
     """The input isn't a Terraform plan this code can read."""
 
 
+# What replaces a value Terraform marks as sensitive. The plan JSON contains such values in
+# plain text (only a separate *_sensitive flag marks them), so they're masked on reading,
+# before any rule, LLM request or PR comment can see them.
+SENSITIVE_VALUE = "(sensitive value)"
+
+
+def _mask_sensitive(value: Any, sensitive: Any) -> Any:
+    """Replace the parts of `value` that the matching `*_sensitive` structure marks as True."""
+    if sensitive is True:
+        return None if value is None else SENSITIVE_VALUE
+    if isinstance(value, dict) and isinstance(sensitive, dict):
+        return {key: _mask_sensitive(item, sensitive.get(key)) for key, item in value.items()}
+    if isinstance(value, list) and isinstance(sensitive, list):
+        return [_mask_sensitive(item, sensitive[i] if i < len(sensitive) else None) for i, item in enumerate(value)]
+    return value
+
+
 @dataclass(frozen=True)
 class ResourceChange:
     """One entry of the plan's `resource_changes`, reduced to what the reviewer needs."""
@@ -50,7 +67,8 @@ class ResourceChange:
     previous_address: str | None = None
     action_reason: str | None = None
     replace_paths: tuple[tuple[str | int, ...], ...] = ()
-    # The resource's attribute values before and after the change (None when it doesn't exist).
+    # The resource's attribute values before and after the change (None when it doesn't exist),
+    # with sensitive values replaced by SENSITIVE_VALUE.
     # Left out of repr and hash: they can be large, and dictionaries can't be hashed.
     before: dict[str, Any] | None = field(default=None, repr=False, hash=False)
     after: dict[str, Any] | None = field(default=None, repr=False, hash=False)
@@ -102,8 +120,8 @@ def parse_plan(plan: dict[str, Any]) -> list[ResourceChange]:
                 previous_address=entry.get("previous_address"),
                 action_reason=entry.get("action_reason"),
                 replace_paths=tuple(tuple(path) for path in entry["change"].get("replace_paths") or ()),
-                before=entry["change"].get("before"),
-                after=entry["change"].get("after"),
+                before=_mask_sensitive(entry["change"].get("before"), entry["change"].get("before_sensitive")),
+                after=_mask_sensitive(entry["change"].get("after"), entry["change"].get("after_sensitive")),
             )
         )
     return changes
