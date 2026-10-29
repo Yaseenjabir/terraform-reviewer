@@ -6,6 +6,7 @@ from collections import Counter
 
 from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
+from tf_reviewer.llm import Review
 from tf_reviewer.rules import Finding, overall_risk
 
 # The same symbols Terraform uses in its human-readable plan.
@@ -72,11 +73,25 @@ def format_cost(cost: CostDiff) -> str:
     return f"Monthly cost: {before} -> {after} ({change})"
 
 
-def format_findings(findings: list[Finding]) -> str:
-    """One line per finding, riskiest first, under a headline with the overall risk."""
+def format_findings(findings: list[Finding], review: Review | None = None) -> str:
+    """One line per finding, riskiest first, under a headline with the overall risk.
+
+    With a review, the LLM's summary comes first and each finding gets its "why" and "fix"
+    lines, all labelled as AI-written so readers know the verdict itself came from the rules.
+    """
     risk = overall_risk(findings)
     if risk is None:
         return "No risky changes found."
-    lines = [f"Findings (overall risk: {risk.name}):"]
-    lines += [f"  {f.risk.name:<6}  [{f.rule_id}] {f.message}" for f in findings]
+    lines = []
+    if review is not None:
+        lines += [f"AI summary: {review.summary}", ""]
+    lines.append(f"Findings (overall risk: {risk.name}):")
+    for i, f in enumerate(findings):
+        lines.append(f"  {f.risk.name:<6}  [{f.rule_id}] {f.message}")
+        explanation = review.explanations[i] if review is not None else None
+        if explanation is not None:
+            lines.append(f"{'':10}Why: {explanation.why}")
+            lines.append(f"{'':10}Fix: {explanation.fix}")
+    if review is not None:
+        lines += ["", f"(explanations written by {review.model}; check them before acting)"]
     return "\n".join(lines)

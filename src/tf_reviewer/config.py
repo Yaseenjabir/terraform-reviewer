@@ -20,6 +20,11 @@ Example:
       add: [8443]
     checkov:
       skip: [CKV_AWS_16]
+    llm:
+      backend: openai-compatible
+      base_url: https://api.groq.com/openai/v1
+      model: openai/gpt-oss-120b
+      api_key_env: GROQ_API_KEY
 """
 
 from __future__ import annotations
@@ -90,6 +95,9 @@ DEFAULT_WEB_PORTS = frozenset({80, 443})
 
 DEFAULT_COST_THRESHOLD = Decimal(50)
 
+# "none" by default: nothing leaves the runner unless a team chooses an LLM.
+LLM_BACKENDS = ("none", "openai-compatible", "anthropic")
+
 
 class ConfigError(ValueError):
     """The config file is invalid."""
@@ -103,6 +111,10 @@ class Config:
     sensitive_ports: Mapping[int, str] = DEFAULT_SENSITIVE_PORTS
     web_ports: frozenset[int] = DEFAULT_WEB_PORTS
     skipped_checkov_checks: frozenset[str] = frozenset()
+    llm_backend: str = "none"
+    llm_model: str | None = None
+    llm_base_url: str | None = None
+    llm_api_key_env: str | None = None
 
 
 DEFAULT_CONFIG = Config()
@@ -115,6 +127,7 @@ _SECTIONS = {
     "sensitive_ports": {"add", "remove"},
     "web_ports": {"add", "remove"},
     "checkov": {"skip"},
+    "llm": {"backend", "model", "base_url", "api_key_env"},
 }
 
 
@@ -153,6 +166,30 @@ def _ports(value: Any, where: str) -> frozenset[int]:
     if not isinstance(value, list):
         raise ConfigError(f"'{where}' must be a list of port numbers")
     return frozenset(_port(item, where) for item in value)
+
+
+def _text(value: Any, where: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ConfigError(f"'{where}' must be a non-empty string")
+    return value.strip()
+
+
+def _llm(section: dict) -> dict:
+    backend = section.get("backend", "none")
+    if backend not in LLM_BACKENDS:
+        raise ConfigError(f"'llm.backend': {backend!r} is not a backend (backends: {', '.join(LLM_BACKENDS)})")
+    model = _text(section.get("model"), "llm.model")
+    base_url = _text(section.get("base_url"), "llm.base_url")
+    key_env = _text(section.get("api_key_env"), "llm.api_key_env")
+    if base_url and not base_url.startswith(("https://", "http://")):
+        raise ConfigError(f"'llm.base_url': {base_url!r} must start with https:// or http://")
+    if backend == "openai-compatible" and not (base_url and model):
+        raise ConfigError("'llm': the openai-compatible backend needs 'base_url' and 'model'")
+    if backend == "anthropic" and base_url:
+        raise ConfigError("'llm.base_url' is only used by the openai-compatible backend")
+    return {"llm_backend": backend, "llm_model": model, "llm_base_url": base_url, "llm_api_key_env": key_env}
 
 
 def parse_config(data: Any) -> Config:
@@ -213,6 +250,8 @@ def parse_config(data: Any) -> Config:
     )
 
     config["skipped_checkov_checks"] = _strings(_section(data, "checkov").get("skip"), "checkov.skip")
+
+    config.update(_llm(_section(data, "llm")))
 
     return Config(**config)
 
