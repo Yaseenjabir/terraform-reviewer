@@ -36,3 +36,4 @@ Thumbs.db
 examples/**/plan.json
 examples/**/.terraform.lock.hcl
 examples/**/infracost.json
+.infracost/
