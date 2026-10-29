@@ -1,0 +1,33 @@
+# Example settings for tf-reviewer. Copy this file to .tf-reviewer.yml in the directory
+# you run tf-reviewer from (or pass --config FILE). Every setting is optional.
+
+version: 1
+
+cost:
+  # Report a monthly cost increase of at least this much (default: 50).
+  threshold: 100
+
+rules:
+  # Turn off rules by ID: data-loss, resource-removed, open-to-internet, iam-wildcard,
+  # admin-policy-attached, cost-increase, checkov.
+  disable: []
+
+stateful_types:
+  # Resource types that store data: deleting or replacing one is HIGH risk.
+  add: [aws_memorydb_cluster]
+  remove: []
+
+sensitive_ports:
+  # Ports that must never be open to the whole internet (HIGH risk), with a name.
+  add:
+    8080: Jenkins
+  remove: []
+
+web_ports:
+  # Ports that may be open to the whole internet (default: 80 and 443).
+  add: []
+  remove: []
+
+checkov:
+  # Checkov check IDs to ignore.
+  skip: []
