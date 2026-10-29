@@ -1,0 +1,7 @@
+# Explanations from Groq's free tier. The key comes from the GROQ_API_KEY secret; without it
+# (for example on pull requests from forks) the review runs rules-only.
+llm:
+  backend: openai-compatible
+  base_url: https://api.groq.com/openai/v1
+  model: openai/gpt-oss-120b
+  api_key_env: GROQ_API_KEY
