@@ -174,6 +174,7 @@ class OpenAICompatibleBackend:
         self._client = openai.OpenAI(base_url=base_url, api_key=api_key, timeout=timeout, max_retries=2)
         self._model = model
         self.description = f"{model} via openai-compatible"
+        self.last_usage: tuple[int, int] | None = None  # (input, output) tokens of the last request
 
     def complete(self, system: str, user: str) -> str:
         try:
@@ -186,6 +187,8 @@ class OpenAICompatibleBackend:
             )
         except self._openai.OpenAIError as e:
             raise LLMError(f"request failed: {redact(str(e))}") from None
+        if response.usage:
+            self.last_usage = (response.usage.prompt_tokens, response.usage.completion_tokens)
         choice = response.choices[0]
         if choice.finish_reason == "length":
             raise LLMError("the answer was cut off (too long)")
@@ -204,6 +207,7 @@ class AnthropicBackend:
         self._client = anthropic.Anthropic(api_key=api_key, timeout=timeout, max_retries=2)
         self._model = model
         self.description = f"{model} via anthropic"
+        self.last_usage: tuple[int, int] | None = None  # (input, output) tokens of the last request
 
     def complete(self, system: str, user: str) -> str:
         try:
@@ -216,6 +220,7 @@ class AnthropicBackend:
             )
         except self._anthropic.APIError as e:
             raise LLMError(f"request failed: {redact(str(e))}") from None
+        self.last_usage = (response.usage.input_tokens, response.usage.output_tokens)
         if response.stop_reason == "refusal":
             raise LLMError("the model declined to answer")
         if response.stop_reason == "max_tokens":
