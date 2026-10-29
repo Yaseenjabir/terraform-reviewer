@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import os
 import sys
 from decimal import Decimal, InvalidOperation
 
@@ -13,7 +14,7 @@ from tf_reviewer.config import CONFIG_FILE_NAME, DEFAULT_CONFIG, ConfigError, fi
 from tf_reviewer.cost import CostDiffError, load_cost_diff
 from tf_reviewer.llm import LLMError, explain, make_backend
 from tf_reviewer.plan import PlanError, load_plan
-from tf_reviewer.rules import evaluate
+from tf_reviewer.rules import Risk, evaluate, overall_risk
 from tf_reviewer.summary import format_cost, format_findings, format_summary
 
 
@@ -66,6 +67,17 @@ def main(argv: list[str] | None = None) -> int:
         default="text",
         help="text for the terminal (default), or markdown for a pull request comment",
     )
+    parser.add_argument(
+        "--comment-file",
+        metavar="FILE",
+        help="also write the pull request comment (Markdown) to this file",
+    )
+    parser.add_argument(
+        "--fail-on",
+        choices=("never", "low", "medium", "high"),
+        default="never",
+        help="exit with code 1 if the overall risk is at least this level (default: never)",
+    )
     args = parser.parse_args(argv)
 
     # Plans and Infracost output can contain any Unicode (e.g. "t3.medium → t3.xlarge").
@@ -100,17 +112,35 @@ def main(argv: list[str] | None = None) -> int:
         except LLMError as e:
             print(f"warning: no AI explanations: {e}", file=sys.stderr)
 
+    try:
+        if args.comment_file:
+            with open(args.comment_file, "w", encoding="utf-8") as f:
+                f.write(format_comment(changes, findings, review, cost))
+        # Inside GitHub Actions, report the result as step outputs.
+        if os.environ.get("GITHUB_OUTPUT"):
+            risk = overall_risk(findings)
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+                f.write(f"risk={risk.name.lower() if risk else 'none'}\nfindings={len(findings)}\n")
+    except OSError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
     if args.format == "markdown":
         sys.stdout.write(format_comment(changes, findings, review, cost))
-        return 0
+    else:
+        print(format_summary(changes))
+        if cost is not None:
+            print(format_cost(cost))
+        print()
+        print(format_findings(findings, review))
+        if config_file:
+            print(f"\n(settings from {config_file})")
 
-    print(format_summary(changes))
-    if cost is not None:
-        print(format_cost(cost))
-    print()
-    print(format_findings(findings, review))
-    if config_file:
-        print(f"\n(settings from {config_file})")
+    risk = overall_risk(findings)
+    if args.fail_on != "never" and risk is not None and risk >= Risk[args.fail_on.upper()]:
+        sys.stdout.flush()  # keep the review above this line in CI logs
+        print(f"\n{risk.name} risk found (--fail-on {args.fail_on}).", file=sys.stderr)
+        return 1
     return 0
 
 

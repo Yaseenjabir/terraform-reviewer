@@ -1,0 +1,121 @@
+name: Terraform PR Reviewer
+description: Finds risky changes in a Terraform plan, explains them in plain English and comments on the pull request.
+author: Yaseenjabir
+branding:
+  icon: shield
+  color: orange
+
+inputs:
+  plan-json:
+    description: Path to the plan JSON (`terraform show -json tfplan > plan.json`), relative to working-directory.
+    required: true
+  config:
+    description: Path to the settings file. Default .tf-reviewer.yml in working-directory, if it exists.
+    required: false
+    default: ""
+  cost-diff:
+    description: Path to an Infracost diff JSON (`infracost diff --format json`), to check cost changes.
+    required: false
+    default: ""
+  checkov:
+    description: Path to Checkov JSON output for the same plan.
+    required: false
+    default: ""
+  fail-on:
+    description: Fail the check if the overall risk is at least this level (high, medium, low or never).
+    required: false
+    default: high
+  comment:
+    description: Post the review as a pull request comment ("true" or "false"). It is updated on every run.
+    required: false
+    default: "true"
+  comment-author:
+    description: Login that posts the comment, used to find it again. Change it only when github-token is not the default.
+    required: false
+    default: github-actions[bot]
+  github-token:
+    description: "Token used to comment. Needs `pull-requests: write`."
+    required: false
+    default: ${{ github.token }}
+  working-directory:
+    description: Directory to run in (paths above are relative to it).
+    required: false
+    default: "."
+  python-version:
+    description: Python version to run the reviewer with.
+    required: false
+    default: "3.13"
+
+outputs:
+  risk:
+    description: Overall risk (none, low, medium or high).
+    value: ${{ steps.review.outputs.risk }}
+  findings:
+    description: Number of findings.
+    value: ${{ steps.review.outputs.findings }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    # Inputs reach the scripts through environment variables, never by pasting ${{ }} into the
+    # script, so a value can't inject shell commands.
+    - name: Install tf-reviewer
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        python -m venv "$RUNNER_TEMP/tf-reviewer-venv"
+        bin="$RUNNER_TEMP/tf-reviewer-venv/bin"
+        if [ "$RUNNER_OS" = "Windows" ]; then bin="$RUNNER_TEMP/tf-reviewer-venv/Scripts"; fi
+        "$bin/python" -m pip install --quiet --disable-pip-version-check "$ACTION_PATH[llm]"
+        echo "TF_REVIEWER_BIN=$bin" >> "$GITHUB_ENV"
+
+    - name: Review the plan
+      id: review
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PLAN_JSON: ${{ inputs.plan-json }}
+        CONFIG: ${{ inputs.config }}
+        COST_DIFF: ${{ inputs.cost-diff }}
+        CHECKOV: ${{ inputs.checkov }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        comment_file="$RUNNER_TEMP/tf-reviewer-comment.md"
+        args=("$PLAN_JSON" --comment-file "$comment_file" --fail-on "$FAIL_ON")
+        if [ -n "$CONFIG" ]; then args+=(--config "$CONFIG"); fi
+        if [ -n "$COST_DIFF" ]; then args+=(--cost-diff "$COST_DIFF"); fi
+        if [ -n "$CHECKOV" ]; then args+=(--checkov "$CHECKOV"); fi
+
+        set +e
+        "$TF_REVIEWER_BIN/tf-reviewer" "${args[@]}"
+        status=$?
+        set -e
+        echo "status=$status" >> "$GITHUB_OUTPUT"
+        # Exit code 2 means the input couldn't be read: stop here.
+        if [ "$status" -eq 2 ]; then exit 2; fi
+        cat "$comment_file" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Comment on the pull request
+      if: inputs.comment == 'true' && github.event.pull_request.number
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        AUTHOR: ${{ inputs.comment-author }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/comment.sh" "$RUNNER_TEMP/tf-reviewer-comment.md"
+
+    - name: Check the risk
+      if: steps.review.outputs.status == '1'
+      shell: bash
+      env:
+        RISK: ${{ steps.review.outputs.risk }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        echo "::error::tf-reviewer found $RISK risk (fail-on: $FAIL_ON). See the pull request comment or the job summary."
+        exit 1

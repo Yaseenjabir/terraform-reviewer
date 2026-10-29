@@ -1,0 +1,46 @@
+# Runs this repository's own Action on examples/risky, a deliberately risky Terraform change,
+# so every pull request shows the reviewer working end to end: a real `terraform plan`, the
+# review, the PR comment and the job summary.
+name: Review example
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write # to post the review comment
+
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Plan the example
+        working-directory: examples/risky
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -refresh=false -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: Review
+        id: review
+        uses: ./
+        with:
+          working-directory: examples/risky
+          plan-json: plan.json
+          fail-on: never # the example is risky on purpose; real projects keep the default (high)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+      - name: Check the outputs
+        env:
+          RISK: ${{ steps.review.outputs.risk }}
+          FINDINGS: ${{ steps.review.outputs.findings }}
+        run: |
+          echo "risk=$RISK findings=$FINDINGS"
+          test "$RISK" = high && test "$FINDINGS" -ge 3
