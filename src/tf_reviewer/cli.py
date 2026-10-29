@@ -8,6 +8,7 @@ import sys
 from decimal import Decimal, InvalidOperation
 
 from tf_reviewer.checkov import CheckovError, load_checkov
+from tf_reviewer.comment import format_comment
 from tf_reviewer.config import CONFIG_FILE_NAME, DEFAULT_CONFIG, ConfigError, find_config, load_config
 from tf_reviewer.cost import CostDiffError, load_cost_diff
 from tf_reviewer.llm import LLMError, explain, make_backend
@@ -59,6 +60,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="don't ask an LLM for explanations, even if the config sets one up (rules-only review)",
     )
+    parser.add_argument(
+        "--format",
+        choices=("text", "markdown"),
+        default="text",
+        help="text for the terminal (default), or markdown for a pull request comment",
+    )
     args = parser.parse_args(argv)
 
     # Plans and Infracost output can contain any Unicode (e.g. "t3.medium → t3.xlarge").
@@ -92,6 +99,10 @@ def main(argv: list[str] | None = None) -> int:
                 review = explain(findings, backend)
         except LLMError as e:
             print(f"warning: no AI explanations: {e}", file=sys.stderr)
+
+    if args.format == "markdown":
+        sys.stdout.write(format_comment(changes, findings, review, cost))
+        return 0
 
     print(format_summary(changes))
     if cost is not None:

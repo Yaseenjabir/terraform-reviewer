@@ -6,6 +6,7 @@ from collections import Counter
 
 from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
+from tf_reviewer.redact import redact
 from tf_reviewer.llm import Review
 from tf_reviewer.rules import Finding, overall_risk
 
@@ -27,7 +28,8 @@ _HEADLINE = [
 ]
 
 
-def _symbol(change: ResourceChange) -> str:
+def symbol(change: ResourceChange) -> str:
+    """Terraform's symbol for the change: +, ~, -, -/+, +/- or -> (moved only)."""
     if change.action is Action.REPLACE:
         return "+/-" if change.creates_before_destroying else "-/+"
     if change.action is Action.NO_OP and change.was_moved:
@@ -35,29 +37,45 @@ def _symbol(change: ResourceChange) -> str:
     return _SYMBOLS[change.action]
 
 
-def _line(change: ResourceChange) -> str:
-    notes = []
+def notes(change: ResourceChange) -> str:
+    """'forced by: bucket; moved from aws_s3_bucket.old', or '' if there's nothing to add."""
+    parts = []
     if change.replace_paths:
-        notes.append("forced by: " + ", ".join(format_path(p) for p in change.replace_paths))
+        parts.append("forced by: " + ", ".join(format_path(p) for p in change.replace_paths))
     if change.was_moved:
-        notes.append(f"moved from {change.previous_address}")
-    suffix = f"  ({'; '.join(notes)})" if notes else ""
-    return f"  {_symbol(change):<3} {change.address}{suffix}"
+        parts.append(f"moved from {change.previous_address}")
+    return redact("; ".join(parts))
 
 
-def format_summary(changes: list[ResourceChange]) -> str:
-    """A headline with counts, then one line per changed or moved resource."""
-    shown = [c for c in changes if c.is_change or c.was_moved]
-    if not shown:
-        return "No changes."
+def shown_changes(changes: list[ResourceChange]) -> list[ResourceChange]:
+    """The resources worth listing: everything that changes or moves."""
+    return [c for c in changes if c.is_change or c.was_moved]
 
+
+def plan_headline(changes: list[ResourceChange]) -> str:
+    """'1 to create, 2 to replace, 1 moved', or 'no changes'."""
+    shown = shown_changes(changes)
     counts = Counter(c.action for c in shown)
     parts = [f"{counts[action]} {label}" for action, label in _HEADLINE if counts[action]]
     moved = sum(c.was_moved for c in shown)
     if moved:
         parts.append(f"{moved} moved")
+    return ", ".join(parts) or "no changes"
 
-    return "\n".join([f"Plan: {', '.join(parts)}"] + [_line(c) for c in shown])
+
+def _line(change: ResourceChange) -> str:
+    # Addresses can hold secrets (for_each keys), and this output ends up in CI logs.
+    extra = notes(change)
+    suffix = f"  ({extra})" if extra else ""
+    return f"  {symbol(change):<3} {redact(change.address)}{suffix}"
+
+
+def format_summary(changes: list[ResourceChange]) -> str:
+    """A headline with counts, then one line per changed or moved resource."""
+    shown = shown_changes(changes)
+    if not shown:
+        return "No changes."
+    return "\n".join([f"Plan: {plan_headline(changes)}"] + [_line(c) for c in shown])
 
 
 def format_cost(cost: CostDiff) -> str:
