@@ -60,3 +60,15 @@ resource "aws_iam_role_policy_attachment" "ci_admin" {
   role       = aws_iam_role.ci.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
+
+# The cost demo: on the main branch this instance is a t3.medium; this pull request makes it a
+# t3.xlarge. The workflow prices both sizes with Infracost and reviews the difference.
+variable "instance_type" {
+  type    = string
+  default = "t3.xlarge"
+}
+
+resource "aws_instance" "app" {
+  ami           = "ami-0123456789abcdef0"
+  instance_type = var.instance_type
+}

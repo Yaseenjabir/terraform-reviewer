@@ -13,6 +13,9 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-24.04
+    env:
+      # Whether the secret exists, without exposing it to every step (`if:` can't read secrets).
+      HAS_INFRACOST_KEY: ${{ secrets.INFRACOST_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -27,12 +30,38 @@ jobs:
           terraform plan -input=false -refresh=false -out=tfplan
           terraform show -json tfplan > plan.json
 
+      # Cost: Infracost needs a free API key (the INFRACOST_API_KEY secret). Without it, these
+      # steps are skipped and the review runs without cost.
+      - name: Set up Infracost
+        if: env.HAS_INFRACOST_KEY == 'true'
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          version: 0.10.x # tf-reviewer reads v0.10's diff format
+
+      # A real project prices the base branch for the baseline (check it out, run `infracost
+      # breakdown`). Here the "main branch" is simulated with instance_type=t3.medium; the
+      # example's default (the "pull request") is t3.xlarge.
+      - name: Price the change
+        id: cost
+        if: env.HAS_INFRACOST_KEY == 'true'
+        working-directory: examples/risky
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          infracost breakdown --path . --terraform-var instance_type=t3.medium \
+            --format json --out-file "$RUNNER_TEMP/baseline.json"
+          infracost diff --path . --compare-to "$RUNNER_TEMP/baseline.json" \
+            --format json --out-file infracost.json
+          echo "diff=infracost.json" >> "$GITHUB_OUTPUT"
+
       - name: Review
         id: review
         uses: ./
         with:
           working-directory: examples/risky
           plan-json: plan.json
+          cost-diff: ${{ steps.cost.outputs.diff }}
           fail-on: never # the example is risky on purpose; real projects keep the default (high)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
