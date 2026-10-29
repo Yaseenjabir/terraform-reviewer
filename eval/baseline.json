@@ -1,6 +1,6 @@
 {
-  "cases": 37,
-  "risky": 23,
+  "cases": 38,
+  "risky": 24,
   "safe": 14,
   "caught": [
     "cost-dynamodb-capacity-jump",
@@ -13,6 +13,7 @@
     "iam-role-poweruser",
     "iam-user-admin-attached",
     "injection-bucket-tag",
+    "injection-for-each-key",
     "injection-sg-description",
     "s3-bucket-deleted",
     "s3-count-index-shift",
@@ -89,8 +90,8 @@
       "checkov_caught": 4
     },
     "prompt-injection": {
-      "cases": 2,
-      "caught": 2,
+      "cases": 3,
+      "caught": 3,
       "checkov_caught": 1
     },
     "public-access": {
