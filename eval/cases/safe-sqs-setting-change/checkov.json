@@ -1,0 +1,9 @@
+{
+ "check_type": "terraform_plan",
+ "results": {
+  "failed_checks": []
+ },
+ "summary": {
+  "failed": 0
+ }
+}

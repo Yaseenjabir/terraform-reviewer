@@ -1,0 +1,1427 @@
+{
+ "format_version": "1.2",
+ "terraform_version": "1.16.5",
+ "planned_values": {
+  "root_module": {
+   "resources": [
+    {
+     "address": "aws_s3_bucket.b[\"backups\"]",
+     "mode": "managed",
+     "type": "aws_s3_bucket",
+     "name": "b",
+     "index": "backups",
+     "provider_name": "registry.terraform.io/hashicorp/aws",
+     "schema_version": 0,
+     "values": {
+      "bucket": "eval-foreach-backups",
+      "force_destroy": false,
+      "region": "us-east-1",
+      "tags": null,
+      "timeouts": null
+     },
+     "sensitive_values": {
+      "cors_rule": [],
+      "grant": [],
+      "lifecycle_rule": [],
+      "logging": [],
+      "object_lock_configuration": [],
+      "replication_configuration": [],
+      "server_side_encryption_configuration": [],
+      "tags_all": {},
+      "versioning": [],
+      "website": []
+     },
+     "identity_schema_version": 0,
+     "identity": {
+      "account_id": null,
+      "bucket": null,
+      "region": null
+     }
+    },
+    {
+     "address": "aws_s3_bucket.b[\"images\"]",
+     "mode": "managed",
+     "type": "aws_s3_bucket",
+     "name": "b",
+     "index": "images",
+     "provider_name": "registry.terraform.io/hashicorp/aws",
+     "schema_version": 0,
+     "values": {
+      "acceleration_status": "",
+      "acl": null,
+      "arn": "arn:aws:s3:::eval-foreach-images",
+      "bucket": "eval-foreach-images",
+      "bucket_domain_name": "eval-foreach-images.s3.amazonaws.com",
+      "bucket_namespace": "global",
+      "bucket_prefix": "",
+      "bucket_region": "us-east-1",
+      "bucket_regional_domain_name": "eval-foreach-images.s3.us-east-1.amazonaws.com",
+      "cors_rule": [],
+      "force_destroy": false,
+      "grant": [
+       {
+        "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+        "permissions": [
+         "FULL_CONTROL"
+        ],
+        "type": "CanonicalUser",
+        "uri": ""
+       }
+      ],
+      "hosted_zone_id": "Z3AQBSTGFYJSTF",
+      "id": "eval-foreach-images",
+      "lifecycle_rule": [],
+      "logging": [],
+      "object_lock_configuration": [],
+      "object_lock_enabled": false,
+      "policy": "",
+      "region": "us-east-1",
+      "replication_configuration": [],
+      "request_payer": "BucketOwner",
+      "server_side_encryption_configuration": [
+       {
+        "rule": [
+         {
+          "apply_server_side_encryption_by_default": [
+           {
+            "kms_master_key_id": "",
+            "sse_algorithm": "AES256"
+           }
+          ],
+          "bucket_key_enabled": false
+         }
+        ]
+       }
+      ],
+      "tags": {},
+      "tags_all": {},
+      "timeouts": null,
+      "versioning": [
+       {
+        "enabled": false,
+        "mfa_delete": false
+       }
+      ],
+      "website": [],
+      "website_domain": null,
+      "website_endpoint": null
+     },
+     "sensitive_values": {
+      "cors_rule": [],
+      "grant": [
+       {
+        "permissions": [
+         false
+        ]
+       }
+      ],
+      "lifecycle_rule": [],
+      "logging": [],
+      "object_lock_configuration": [],
+      "replication_configuration": [],
+      "server_side_encryption_configuration": [
+       {
+        "rule": [
+         {
+          "apply_server_side_encryption_by_default": [
+           {}
+          ]
+         }
+        ]
+       }
+      ],
+      "tags": {},
+      "tags_all": {},
+      "versioning": [
+       {}
+      ],
+      "website": []
+     },
+     "identity_schema_version": 0,
+     "identity": {
+      "account_id": "",
+      "bucket": "eval-foreach-images",
+      "region": "us-east-1"
+     }
+    },
+    {
+     "address": "aws_s3_bucket.b[\"logs\"]",
+     "mode": "managed",
+     "type": "aws_s3_bucket",
+     "name": "b",
+     "index": "logs",
+     "provider_name": "registry.terraform.io/hashicorp/aws",
+     "schema_version": 0,
+     "values": {
+      "acceleration_status": "",
+      "acl": null,
+      "arn": "arn:aws:s3:::eval-foreach-logs",
+      "bucket": "eval-foreach-logs",
+      "bucket_domain_name": "eval-foreach-logs.s3.amazonaws.com",
+      "bucket_namespace": "global",
+      "bucket_prefix": "",
+      "bucket_region": "us-east-1",
+      "bucket_regional_domain_name": "eval-foreach-logs.s3.us-east-1.amazonaws.com",
+      "cors_rule": [],
+      "force_destroy": false,
+      "grant": [
+       {
+        "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+        "permissions": [
+         "FULL_CONTROL"
+        ],
+        "type": "CanonicalUser",
+        "uri": ""
+       }
+      ],
+      "hosted_zone_id": "Z3AQBSTGFYJSTF",
+      "id": "eval-foreach-logs",
+      "lifecycle_rule": [],
+      "logging": [],
+      "object_lock_configuration": [],
+      "object_lock_enabled": false,
+      "policy": "",
+      "region": "us-east-1",
+      "replication_configuration": [],
+      "request_payer": "BucketOwner",
+      "server_side_encryption_configuration": [
+       {
+        "rule": [
+         {
+          "apply_server_side_encryption_by_default": [
+           {
+            "kms_master_key_id": "",
+            "sse_algorithm": "AES256"
+           }
+          ],
+          "bucket_key_enabled": false
+         }
+        ]
+       }
+      ],
+      "tags": {},
+      "tags_all": {},
+      "timeouts": null,
+      "versioning": [
+       {
+        "enabled": false,
+        "mfa_delete": false
+       }
+      ],
+      "website": [],
+      "website_domain": null,
+      "website_endpoint": null
+     },
+     "sensitive_values": {
+      "cors_rule": [],
+      "grant": [
+       {
+        "permissions": [
+         false
+        ]
+       }
+      ],
+      "lifecycle_rule": [],
+      "logging": [],
+      "object_lock_configuration": [],
+      "replication_configuration": [],
+      "server_side_encryption_configuration": [
+       {
+        "rule": [
+         {
+          "apply_server_side_encryption_by_default": [
+           {}
+          ]
+         }
+        ]
+       }
+      ],
+      "tags": {},
+      "tags_all": {},
+      "versioning": [
+       {}
+      ],
+      "website": []
+     },
+     "identity_schema_version": 0,
+     "identity": {
+      "account_id": "",
+      "bucket": "eval-foreach-logs",
+      "region": "us-east-1"
+     }
+    }
+   ]
+  }
+ },
+ "resource_drift": [
+  {
+   "address": "aws_s3_bucket.b[\"images\"]",
+   "mode": "managed",
+   "type": "aws_s3_bucket",
+   "name": "b",
+   "index": "images",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "update"
+    ],
+    "before": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-images",
+     "bucket": "eval-foreach-images",
+     "bucket_domain_name": "eval-foreach-images.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-images.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-images",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": null,
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-images",
+     "bucket": "eval-foreach-images",
+     "bucket_domain_name": "eval-foreach-images.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-images.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-images",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    },
+    "after_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    }
+   }
+  },
+  {
+   "address": "aws_s3_bucket.b[\"logs\"]",
+   "mode": "managed",
+   "type": "aws_s3_bucket",
+   "name": "b",
+   "index": "logs",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "update"
+    ],
+    "before": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-logs",
+     "bucket": "eval-foreach-logs",
+     "bucket_domain_name": "eval-foreach-logs.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-logs.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-logs",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": null,
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-logs",
+     "bucket": "eval-foreach-logs",
+     "bucket_domain_name": "eval-foreach-logs.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-logs.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-logs",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    },
+    "after_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    }
+   }
+  }
+ ],
+ "resource_changes": [
+  {
+   "address": "aws_s3_bucket.b[\"backups\"]",
+   "mode": "managed",
+   "type": "aws_s3_bucket",
+   "name": "b",
+   "index": "backups",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "before": null,
+    "after": {
+     "bucket": "eval-foreach-backups",
+     "force_destroy": false,
+     "region": "us-east-1",
+     "tags": null,
+     "timeouts": null
+    },
+    "after_unknown": {
+     "acceleration_status": true,
+     "acl": true,
+     "arn": true,
+     "bucket_domain_name": true,
+     "bucket_namespace": true,
+     "bucket_prefix": true,
+     "bucket_region": true,
+     "bucket_regional_domain_name": true,
+     "cors_rule": true,
+     "grant": true,
+     "hosted_zone_id": true,
+     "id": true,
+     "lifecycle_rule": true,
+     "logging": true,
+     "object_lock_configuration": true,
+     "object_lock_enabled": true,
+     "policy": true,
+     "replication_configuration": true,
+     "request_payer": true,
+     "server_side_encryption_configuration": true,
+     "tags_all": true,
+     "versioning": true,
+     "website": true,
+     "website_domain": true,
+     "website_endpoint": true
+    },
+    "before_sensitive": false,
+    "after_sensitive": {
+     "cors_rule": [],
+     "grant": [],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [],
+     "tags_all": {},
+     "versioning": [],
+     "website": []
+    },
+    "after_identity": {
+     "account_id": null,
+     "bucket": null,
+     "region": null
+    }
+   }
+  },
+  {
+   "address": "aws_s3_bucket.b[\"images\"]",
+   "mode": "managed",
+   "type": "aws_s3_bucket",
+   "name": "b",
+   "index": "images",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "no-op"
+    ],
+    "before": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-images",
+     "bucket": "eval-foreach-images",
+     "bucket_domain_name": "eval-foreach-images.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-images.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-images",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-images",
+     "bucket": "eval-foreach-images",
+     "bucket_domain_name": "eval-foreach-images.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-images.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-images",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    },
+    "after_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    },
+    "before_identity": {
+     "account_id": "",
+     "bucket": "eval-foreach-images",
+     "region": "us-east-1"
+    },
+    "after_identity": {
+     "account_id": "",
+     "bucket": "eval-foreach-images",
+     "region": "us-east-1"
+    }
+   }
+  },
+  {
+   "address": "aws_s3_bucket.b[\"logs\"]",
+   "mode": "managed",
+   "type": "aws_s3_bucket",
+   "name": "b",
+   "index": "logs",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "no-op"
+    ],
+    "before": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-logs",
+     "bucket": "eval-foreach-logs",
+     "bucket_domain_name": "eval-foreach-logs.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-logs.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-logs",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after": {
+     "acceleration_status": "",
+     "acl": null,
+     "arn": "arn:aws:s3:::eval-foreach-logs",
+     "bucket": "eval-foreach-logs",
+     "bucket_domain_name": "eval-foreach-logs.s3.amazonaws.com",
+     "bucket_namespace": "global",
+     "bucket_prefix": "",
+     "bucket_region": "us-east-1",
+     "bucket_regional_domain_name": "eval-foreach-logs.s3.us-east-1.amazonaws.com",
+     "cors_rule": [],
+     "force_destroy": false,
+     "grant": [
+      {
+       "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+       "permissions": [
+        "FULL_CONTROL"
+       ],
+       "type": "CanonicalUser",
+       "uri": ""
+      }
+     ],
+     "hosted_zone_id": "Z3AQBSTGFYJSTF",
+     "id": "eval-foreach-logs",
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "object_lock_enabled": false,
+     "policy": "",
+     "region": "us-east-1",
+     "replication_configuration": [],
+     "request_payer": "BucketOwner",
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {
+           "kms_master_key_id": "",
+           "sse_algorithm": "AES256"
+          }
+         ],
+         "bucket_key_enabled": false
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "timeouts": null,
+     "versioning": [
+      {
+       "enabled": false,
+       "mfa_delete": false
+      }
+     ],
+     "website": [],
+     "website_domain": null,
+     "website_endpoint": null
+    },
+    "after_unknown": {},
+    "before_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    },
+    "after_sensitive": {
+     "cors_rule": [],
+     "grant": [
+      {
+       "permissions": [
+        false
+       ]
+      }
+     ],
+     "lifecycle_rule": [],
+     "logging": [],
+     "object_lock_configuration": [],
+     "replication_configuration": [],
+     "server_side_encryption_configuration": [
+      {
+       "rule": [
+        {
+         "apply_server_side_encryption_by_default": [
+          {}
+         ]
+        }
+       ]
+      }
+     ],
+     "tags": {},
+     "tags_all": {},
+     "versioning": [
+      {}
+     ],
+     "website": []
+    },
+    "before_identity": {
+     "account_id": "",
+     "bucket": "eval-foreach-logs",
+     "region": "us-east-1"
+    },
+    "after_identity": {
+     "account_id": "",
+     "bucket": "eval-foreach-logs",
+     "region": "us-east-1"
+    }
+   }
+  }
+ ],
+ "prior_state": {
+  "format_version": "1.0",
+  "terraform_version": "1.16.5",
+  "values": {
+   "root_module": {
+    "resources": [
+     {
+      "address": "aws_s3_bucket.b[\"images\"]",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "b",
+      "index": "images",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "schema_version": 0,
+      "values": {
+       "acceleration_status": "",
+       "acl": null,
+       "arn": "arn:aws:s3:::eval-foreach-images",
+       "bucket": "eval-foreach-images",
+       "bucket_domain_name": "eval-foreach-images.s3.amazonaws.com",
+       "bucket_namespace": "global",
+       "bucket_prefix": "",
+       "bucket_region": "us-east-1",
+       "bucket_regional_domain_name": "eval-foreach-images.s3.us-east-1.amazonaws.com",
+       "cors_rule": [],
+       "force_destroy": false,
+       "grant": [
+        {
+         "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+         "permissions": [
+          "FULL_CONTROL"
+         ],
+         "type": "CanonicalUser",
+         "uri": ""
+        }
+       ],
+       "hosted_zone_id": "Z3AQBSTGFYJSTF",
+       "id": "eval-foreach-images",
+       "lifecycle_rule": [],
+       "logging": [],
+       "object_lock_configuration": [],
+       "object_lock_enabled": false,
+       "policy": "",
+       "region": "us-east-1",
+       "replication_configuration": [],
+       "request_payer": "BucketOwner",
+       "server_side_encryption_configuration": [
+        {
+         "rule": [
+          {
+           "apply_server_side_encryption_by_default": [
+            {
+             "kms_master_key_id": "",
+             "sse_algorithm": "AES256"
+            }
+           ],
+           "bucket_key_enabled": false
+          }
+         ]
+        }
+       ],
+       "tags": {},
+       "tags_all": {},
+       "timeouts": null,
+       "versioning": [
+        {
+         "enabled": false,
+         "mfa_delete": false
+        }
+       ],
+       "website": [],
+       "website_domain": null,
+       "website_endpoint": null
+      },
+      "sensitive_values": {
+       "cors_rule": [],
+       "grant": [
+        {
+         "permissions": [
+          false
+         ]
+        }
+       ],
+       "lifecycle_rule": [],
+       "logging": [],
+       "object_lock_configuration": [],
+       "replication_configuration": [],
+       "server_side_encryption_configuration": [
+        {
+         "rule": [
+          {
+           "apply_server_side_encryption_by_default": [
+            {}
+           ]
+          }
+         ]
+        }
+       ],
+       "tags": {},
+       "tags_all": {},
+       "versioning": [
+        {}
+       ],
+       "website": []
+      },
+      "identity_schema_version": 0,
+      "identity": {
+       "account_id": "",
+       "bucket": "eval-foreach-images",
+       "region": "us-east-1"
+      }
+     },
+     {
+      "address": "aws_s3_bucket.b[\"logs\"]",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "b",
+      "index": "logs",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "schema_version": 0,
+      "values": {
+       "acceleration_status": "",
+       "acl": null,
+       "arn": "arn:aws:s3:::eval-foreach-logs",
+       "bucket": "eval-foreach-logs",
+       "bucket_domain_name": "eval-foreach-logs.s3.amazonaws.com",
+       "bucket_namespace": "global",
+       "bucket_prefix": "",
+       "bucket_region": "us-east-1",
+       "bucket_regional_domain_name": "eval-foreach-logs.s3.us-east-1.amazonaws.com",
+       "cors_rule": [],
+       "force_destroy": false,
+       "grant": [
+        {
+         "id": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a",
+         "permissions": [
+          "FULL_CONTROL"
+         ],
+         "type": "CanonicalUser",
+         "uri": ""
+        }
+       ],
+       "hosted_zone_id": "Z3AQBSTGFYJSTF",
+       "id": "eval-foreach-logs",
+       "lifecycle_rule": [],
+       "logging": [],
+       "object_lock_configuration": [],
+       "object_lock_enabled": false,
+       "policy": "",
+       "region": "us-east-1",
+       "replication_configuration": [],
+       "request_payer": "BucketOwner",
+       "server_side_encryption_configuration": [
+        {
+         "rule": [
+          {
+           "apply_server_side_encryption_by_default": [
+            {
+             "kms_master_key_id": "",
+             "sse_algorithm": "AES256"
+            }
+           ],
+           "bucket_key_enabled": false
+          }
+         ]
+        }
+       ],
+       "tags": {},
+       "tags_all": {},
+       "timeouts": null,
+       "versioning": [
+        {
+         "enabled": false,
+         "mfa_delete": false
+        }
+       ],
+       "website": [],
+       "website_domain": null,
+       "website_endpoint": null
+      },
+      "sensitive_values": {
+       "cors_rule": [],
+       "grant": [
+        {
+         "permissions": [
+          false
+         ]
+        }
+       ],
+       "lifecycle_rule": [],
+       "logging": [],
+       "object_lock_configuration": [],
+       "replication_configuration": [],
+       "server_side_encryption_configuration": [
+        {
+         "rule": [
+          {
+           "apply_server_side_encryption_by_default": [
+            {}
+           ]
+          }
+         ]
+        }
+       ],
+       "tags": {},
+       "tags_all": {},
+       "versioning": [
+        {}
+       ],
+       "website": []
+      },
+      "identity_schema_version": 0,
+      "identity": {
+       "account_id": "",
+       "bucket": "eval-foreach-logs",
+       "region": "us-east-1"
+      }
+     }
+    ]
+   }
+  }
+ },
+ "configuration": {
+  "provider_config": {
+   "aws": {
+    "name": "aws",
+    "full_name": "registry.terraform.io/hashicorp/aws",
+    "version_constraint": "~> 6.0",
+    "expressions": {
+     "access_key": {
+      "constant_value": "test"
+     },
+     "endpoints": [
+      {
+       "dynamodb": {
+        "constant_value": "http://localhost:4566"
+       },
+       "ec2": {
+        "constant_value": "http://localhost:4566"
+       },
+       "iam": {
+        "constant_value": "http://localhost:4566"
+       },
+       "s3": {
+        "constant_value": "http://localhost:4566"
+       },
+       "sqs": {
+        "constant_value": "http://localhost:4566"
+       },
+       "sts": {
+        "constant_value": "http://localhost:4566"
+       }
+      }
+     ],
+     "region": {
+      "constant_value": "us-east-1"
+     },
+     "s3_use_path_style": {
+      "constant_value": true
+     },
+     "secret_key": {
+      "constant_value": "test"
+     },
+     "skip_credentials_validation": {
+      "constant_value": true
+     },
+     "skip_metadata_api_check": {
+      "constant_value": true
+     },
+     "skip_requesting_account_id": {
+      "constant_value": true
+     }
+    }
+   }
+  },
+  "root_module": {
+   "resources": [
+    {
+     "address": "aws_s3_bucket.b",
+     "mode": "managed",
+     "type": "aws_s3_bucket",
+     "name": "b",
+     "provider_config_key": "aws",
+     "expressions": {
+      "bucket": {
+       "references": [
+        "each.key"
+       ]
+      }
+     },
+     "schema_version": 0
+    }
+   ]
+  }
+ },
+ "timestamp": "2026-10-29T08:54:26Z",
+ "applyable": true,
+ "complete": true,
+ "errored": false
+}

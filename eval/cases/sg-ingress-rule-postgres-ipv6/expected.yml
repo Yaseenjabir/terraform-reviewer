@@ -1,0 +1,5 @@
+description: A vpc_security_group_ingress_rule opens PostgreSQL to every IPv6 address.
+category: open-network
+safe: false
+expect:
+  - {address: 'aws_vpc_security_group_ingress_rule.db', risk: HIGH, rule: open-to-internet}

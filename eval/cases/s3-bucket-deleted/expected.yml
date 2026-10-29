@@ -1,0 +1,5 @@
+description: A bucket holding data is deleted.
+category: data-loss
+safe: false
+expect:
+  - {address: 'aws_s3_bucket.data', risk: HIGH, rule: data-loss}

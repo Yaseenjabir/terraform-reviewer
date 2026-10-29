@@ -1,0 +1,38 @@
+{
+ "check_type": "terraform_plan",
+ "results": {
+  "failed_checks": [
+   {
+    "check_id": "CKV_AWS_24",
+    "check_name": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 22",
+    "resource": "aws_security_group.app",
+    "resource_address": "aws_security_group.app",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-1-port-security"
+   },
+   {
+    "check_id": "CKV2_AWS_5",
+    "check_name": "Ensure that Security Groups are attached to another resource",
+    "resource": "aws_security_group.app",
+    "resource_address": "aws_security_group.app",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-that-security-groups-are-attached-to-ec2-instances-or-elastic-network-interfaces-enis"
+   },
+   {
+    "check_id": "CKV2_AWS_11",
+    "check_name": "Ensure VPC flow logging is enabled in all VPCs",
+    "resource": "aws_vpc.main",
+    "resource_address": "aws_vpc.main",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/logging-9-enable-vpc-flow-logging"
+   },
+   {
+    "check_id": "CKV2_AWS_12",
+    "check_name": "Ensure the default security group of every VPC restricts all traffic",
+    "resource": "aws_vpc.main",
+    "resource_address": "aws_vpc.main",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-4"
+   }
+  ]
+ },
+ "summary": {
+  "failed": 4
+ }
+}

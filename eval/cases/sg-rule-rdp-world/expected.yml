@@ -1,0 +1,5 @@
+description: A separate aws_security_group_rule opens RDP to the internet.
+category: open-network
+safe: false
+expect:
+  - {address: 'aws_security_group_rule.rdp', risk: HIGH, rule: open-to-internet}

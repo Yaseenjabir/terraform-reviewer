@@ -1,0 +1,4 @@
+description: A new table is created.
+category: safe
+safe: true
+expect: []

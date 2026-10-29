@@ -1,0 +1,5 @@
+description: Point-in-time recovery (backups) is turned off on a table.
+category: backups
+safe: false
+expect:
+  - {address: 'aws_dynamodb_table.table', risk: MEDIUM}

@@ -1,0 +1,73 @@
+{
+ "check_type": "terraform_plan",
+ "results": {
+  "failed_checks": [
+   {
+    "check_id": "CKV_AWS_53",
+    "check_name": "Ensure S3 bucket has block public ACLS enabled",
+    "resource": "aws_s3_bucket_public_access_block.data",
+    "resource_address": "aws_s3_bucket_public_access_block.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/bc-aws-s3-19"
+   },
+   {
+    "check_id": "CKV_AWS_54",
+    "check_name": "Ensure S3 bucket has block public policy enabled",
+    "resource": "aws_s3_bucket_public_access_block.data",
+    "resource_address": "aws_s3_bucket_public_access_block.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/bc-aws-s3-20"
+   },
+   {
+    "check_id": "CKV_AWS_55",
+    "check_name": "Ensure S3 bucket has ignore public ACLs enabled",
+    "resource": "aws_s3_bucket_public_access_block.data",
+    "resource_address": "aws_s3_bucket_public_access_block.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/bc-aws-s3-21"
+   },
+   {
+    "check_id": "CKV_AWS_56",
+    "check_name": "Ensure S3 bucket has 'restrict_public_buckets' enabled",
+    "resource": "aws_s3_bucket_public_access_block.data",
+    "resource_address": "aws_s3_bucket_public_access_block.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/bc-aws-s3-22"
+   },
+   {
+    "check_id": "CKV2_AWS_62",
+    "check_name": "Ensure S3 buckets should have event notifications enabled",
+    "resource": "aws_s3_bucket.data",
+    "resource_address": "aws_s3_bucket.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/bc-aws-2-62"
+   },
+   {
+    "check_id": "CKV_AWS_144",
+    "check_name": "Ensure that S3 bucket has cross-region replication enabled",
+    "resource": "aws_s3_bucket.data",
+    "resource_address": "aws_s3_bucket.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-bucket-has-cross-region-replication-enabled"
+   },
+   {
+    "check_id": "CKV_AWS_21",
+    "check_name": "Ensure all data stored in the S3 bucket have versioning enabled",
+    "resource": "aws_s3_bucket.data",
+    "resource_address": "aws_s3_bucket.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-16-enable-versioning"
+   },
+   {
+    "check_id": "CKV_AWS_145",
+    "check_name": "Ensure that S3 buckets are encrypted with KMS by default",
+    "resource": "aws_s3_bucket.data",
+    "resource_address": "aws_s3_bucket.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-buckets-are-encrypted-with-kms-by-default"
+   },
+   {
+    "check_id": "CKV2_AWS_6",
+    "check_name": "Ensure that S3 bucket has a Public Access block",
+    "resource": "aws_s3_bucket.data",
+    "resource_address": "aws_s3_bucket.data",
+    "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/s3-bucket-should-have-public-access-blocks-defaults-to-false-if-the-public-access-block-is-not-attached"
+   }
+  ]
+ },
+ "summary": {
+  "failed": 9
+ }
+}

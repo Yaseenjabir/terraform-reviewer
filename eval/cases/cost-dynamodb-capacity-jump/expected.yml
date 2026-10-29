@@ -1,0 +1,6 @@
+description: Provisioned capacity on a table goes from 5 to 200 units.
+category: cost
+safe: false
+cost: true
+expect:
+  - {address: 'aws_dynamodb_table.events', risk: MEDIUM, rule: cost-increase}

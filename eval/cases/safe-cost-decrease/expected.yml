@@ -1,0 +1,5 @@
+description: Provisioned capacity on a table goes down from 200 to 5 units.
+category: safe
+safe: true
+cost: true
+expect: []
