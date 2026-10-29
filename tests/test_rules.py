@@ -349,3 +349,67 @@ def test_already_attached_is_not_this_changes_fault():
 
 def test_policy_arn_unknown_until_apply():
     assert attached(None, {"role": "app", "policy_arn": None}) == []
+
+
+# --- protection-disabled ------------------------------------------------------------------
+
+from tf_reviewer.rules import protection_disabled  # noqa: E402
+
+
+def _update(type_, before, after, address=None):
+    return ResourceChange(
+        address=address or f"{type_}.x", type=type_, action=Action.UPDATE, actions=("update",), before=before, after=after
+    )
+
+
+PITR_ON = {"point_in_time_recovery": [{"enabled": True}]}
+PITR_OFF = {"point_in_time_recovery": [{"enabled": False}]}
+
+
+@pytest.mark.parametrize(
+    ("type_", "before", "after", "what"),
+    [
+        ("aws_dynamodb_table", PITR_ON, PITR_OFF, "point-in-time recovery (backups)"),
+        ("aws_dynamodb_table", {"deletion_protection_enabled": True}, {"deletion_protection_enabled": False}, "deletion protection"),
+        ("aws_s3_bucket_versioning", {"versioning_configuration": [{"status": "Enabled"}]},
+         {"versioning_configuration": [{"status": "Suspended"}]}, "versioning"),
+        ("aws_db_instance", {"backup_retention_period": 7}, {"backup_retention_period": 0}, "automated backups"),
+        ("aws_rds_cluster", {"deletion_protection": True}, {"deletion_protection": False}, "deletion protection"),
+        ("aws_db_instance", {"skip_final_snapshot": False}, {"skip_final_snapshot": True},
+         "the final snapshot taken before deletion"),
+    ],
+)
+def test_protection_turned_off(type_, before, after, what):
+    [finding] = protection_disabled(_update(type_, before, after))
+    assert (finding.rule_id, finding.risk) == ("protection-disabled", Risk.MEDIUM)
+    assert finding.message == f"{type_}.x turns off {what}."
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        (PITR_OFF, PITR_ON),  # turned on
+        (PITR_ON, PITR_ON),  # unchanged
+        (PITR_OFF, PITR_OFF),  # was already off
+        (PITR_ON, {"point_in_time_recovery": []}),  # unknown until apply
+        (PITR_ON, {}),
+        (None, PITR_OFF),
+    ],
+)
+def test_protection_not_turned_off(before, after):
+    assert protection_disabled(_update("aws_dynamodb_table", before, after)) == []
+
+
+def test_protection_rule_ignores_creates_and_deletes():
+    for action in (Action.CREATE, Action.DELETE, Action.REPLACE):
+        change = ResourceChange(
+            address="aws_dynamodb_table.x", type="aws_dynamodb_table", action=action, actions=(action.value,),
+            before=PITR_ON, after=PITR_OFF,
+        )
+        assert protection_disabled(change) == []
+
+
+def test_several_protections_turned_off_at_once():
+    before = {"backup_retention_period": 7, "deletion_protection": True, "skip_final_snapshot": False}
+    after = {"backup_retention_period": 0, "deletion_protection": False, "skip_final_snapshot": True}
+    assert len(protection_disabled(_update("aws_db_instance", before, after))) == 3

@@ -4,16 +4,18 @@
 
 | | tf-reviewer | Checkov alone |
 |---|---|---|
-| Risky changes caught | 21/23 (91%) | 13/23 (57%) |
+| Risky changes caught | 23/23 (100%) | 13/23 (57%) |
 | Safe changes with a false alarm | 0/14 (0%) | 11/14 (79%) |
 
 Checkov alone is scored generously: a risky change counts as caught when Checkov fails *any* check on the right resource, even an unrelated one (for example, an encryption check on a table whose cost jumped). It can't see deletions or replacements at all, because it only reads the planned end state.
+
+The cases were written alongside the rules, so a high score shows the rules do what they were designed to do, not that they catch every mistake in real projects. Cases from real-world pull requests would test that.
 
 ## Caught, by kind of risk
 
 | Kind | Cases | tf-reviewer | Checkov alone |
 |---|---|---|---|
-| backups | 2 | 0 | 1 |
+| backups | 2 | 2 | 1 |
 | cost | 1 | 1 | 1 |
 | data-loss | 5 | 5 | 1 |
 | encryption | 1 | 1 | 0 |
@@ -24,8 +26,7 @@ Checkov alone is scored generously: a risky change counts as caught when Checkov
 
 ## Missed by tf-reviewer
 
-- **dynamodb-pitr-disabled**: Point-in-time recovery (backups) is turned off on a table. Expected `aws_dynamodb_table.table` at MEDIUM; flagged: nothing.
-- **s3-versioning-suspended**: Versioning (protection against overwrites and deletes) is suspended on a bucket. Expected `aws_s3_bucket_versioning.data` at MEDIUM; flagged: nothing.
+None.
 
 ## False alarms from tf-reviewer
 
@@ -43,7 +44,7 @@ None.
 |---|---|---|---|
 | cost-dynamodb-capacity-jump | cost | caught | caught |
 | dynamodb-forced-replacement | data-loss | caught | caught |
-| dynamodb-pitr-disabled | backups | missed | caught |
+| dynamodb-pitr-disabled | backups | caught | caught |
 | dynamodb-renamed-without-moved | data-loss | caught | missed |
 | iam-policy-service-wildcard | iam | caught | caught |
 | iam-policy-star | iam | caught | caught |
@@ -56,7 +57,7 @@ None.
 | s3-count-index-shift | data-loss | caught | missed |
 | s3-encryption-removed | encryption | caught | missed |
 | s3-public-access-block-disabled | public-access | caught | caught |
-| s3-versioning-suspended | backups | missed | missed |
+| s3-versioning-suspended | backups | caught | missed |
 | safe-cost-decrease | safe | quiet | false alarm (3 checks) |
 | safe-for-each-add | safe | quiet | false alarm (17 checks) |
 | safe-iam-least-privilege | safe | quiet | quiet |

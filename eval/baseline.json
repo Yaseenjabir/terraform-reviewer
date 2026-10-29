@@ -5,6 +5,7 @@
   "caught": [
     "cost-dynamodb-capacity-jump",
     "dynamodb-forced-replacement",
+    "dynamodb-pitr-disabled",
     "dynamodb-renamed-without-moved",
     "iam-policy-service-wildcard",
     "iam-policy-star",
@@ -17,6 +18,7 @@
     "s3-count-index-shift",
     "s3-encryption-removed",
     "s3-public-access-block-disabled",
+    "s3-versioning-suspended",
     "sg-all-ports-world",
     "sg-custom-port-world",
     "sg-ingress-rule-postgres-ipv6",
@@ -58,7 +60,7 @@
   "categories": {
     "backups": {
       "cases": 2,
-      "caught": 0,
+      "caught": 2,
       "checkov_caught": 1
     },
     "cost": {
