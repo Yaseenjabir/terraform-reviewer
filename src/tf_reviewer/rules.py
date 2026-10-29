@@ -300,7 +300,67 @@ def admin_policy_attached(change: ResourceChange, config: Config = DEFAULT_CONFI
     return findings
 
 
-RULES: tuple[Rule, ...] = (data_loss, resource_removed, open_to_internet, iam_wildcard, admin_policy_attached)
+# --- Safety features turned off ------------------------------------------------------------
+
+# (attribute path, what it protects, is a value protective?) for both RDS resource types
+_RDS_PROTECTIONS = [
+    (("backup_retention_period",), "automated backups", lambda v: isinstance(v, int) and v > 0),
+    (("deletion_protection",), "deletion protection", lambda v: v is True),
+    (("skip_final_snapshot",), "the final snapshot taken before deletion", lambda v: v is False),
+]
+# (resource type, attribute path, what it protects, is a value protective?)
+PROTECTIONS = [
+    ("aws_dynamodb_table", ("point_in_time_recovery", 0, "enabled"), "point-in-time recovery (backups)", lambda v: v is True),
+    ("aws_dynamodb_table", ("deletion_protection_enabled",), "deletion protection", lambda v: v is True),
+    ("aws_s3_bucket_versioning", ("versioning_configuration", 0, "status"), "versioning", lambda v: v == "Enabled"),
+    *(("aws_db_instance", *p) for p in _RDS_PROTECTIONS),
+    *(("aws_rds_cluster", *p) for p in _RDS_PROTECTIONS),
+]
+
+
+def _get(values: object, path: tuple) -> object:
+    """The value at a path of keys and list indexes, or None if any part is missing."""
+    for key in path:
+        if isinstance(key, int):
+            values = values[key] if isinstance(values, list) and len(values) > key else None
+        else:
+            values = values.get(key) if isinstance(values, dict) else None
+    return values
+
+
+def protection_disabled(change: ResourceChange, config: Config = DEFAULT_CONFIG) -> list[Finding]:
+    """An update turns off a safety feature (backups, versioning, deletion protection) that was on.
+
+    Only updates: a delete or replace is already reported by data-loss. A value that is unknown
+    until apply (None in the plan) is never reported.
+    """
+    if change.action is not Action.UPDATE:
+        return []
+    findings = []
+    for resource_type, path, what, protective in PROTECTIONS:
+        if change.type != resource_type:
+            continue
+        after = _get(change.after, path)
+        if after is not None and protective(_get(change.before, path)) and not protective(after):
+            findings.append(
+                Finding(
+                    rule_id="protection-disabled",
+                    risk=Risk.MEDIUM,
+                    address=change.address,
+                    message=f"{change.address} turns off {what}.",
+                )
+            )
+    return findings
+
+
+RULES: tuple[Rule, ...] = (
+    data_loss,
+    resource_removed,
+    open_to_internet,
+    iam_wildcard,
+    admin_policy_attached,
+    protection_disabled,
+)
 
 
 # --- Cost (a whole-plan rule, using the Infracost diff) -----------------------------------

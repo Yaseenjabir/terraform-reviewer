@@ -47,6 +47,7 @@ RULE_IDS = frozenset(
         "open-to-internet",
         "iam-wildcard",
         "admin-policy-attached",
+        "protection-disabled",
         "cost-increase",
         "checkov",
     }

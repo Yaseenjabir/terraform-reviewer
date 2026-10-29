@@ -9,7 +9,7 @@ cost:
 
 rules:
   # Turn off rules by ID: data-loss, resource-removed, open-to-internet, iam-wildcard,
-  # admin-policy-attached, cost-increase, checkov.
+  # admin-policy-attached, protection-disabled, cost-increase, checkov.
   disable: []
 
 stateful_types:

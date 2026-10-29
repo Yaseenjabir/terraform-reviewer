@@ -2,4 +2,4 @@ description: Versioning (protection against overwrites and deletes) is suspended
 category: backups
 safe: false
 expect:
-  - {address: 'aws_s3_bucket_versioning.data', risk: MEDIUM}
+  - {address: 'aws_s3_bucket_versioning.data', risk: MEDIUM, rule: protection-disabled}

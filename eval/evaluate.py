@@ -172,6 +172,10 @@ def format_markdown(results: list[CaseResult]) -> str:
         "the right resource, even an unrelated one (for example, an encryption check on a table whose cost "
         "jumped). It can't see deletions or replacements at all, because it only reads the planned end state.",
         "",
+        "The cases were written alongside the rules, so a high score shows the rules do what they were "
+        "designed to do, not that they catch every mistake in real projects. Cases from real-world pull "
+        "requests would test that.",
+        "",
         "## Caught, by kind of risk",
         "",
         "| Kind | Cases | tf-reviewer | Checkov alone |",
