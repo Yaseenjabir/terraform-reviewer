@@ -31,3 +31,14 @@ web_ports:
 checkov:
   # Checkov check IDs to ignore.
   skip: []
+
+llm:
+  # Who writes the plain-English explanations: none (default: rules-only, nothing leaves the
+  # runner), openai-compatible (Groq, Ollama, vLLM, an internal endpoint...) or anthropic.
+  # Only the redacted findings are sent, never the plan.
+  backend: openai-compatible
+  base_url: https://api.groq.com/openai/v1
+  model: openai/gpt-oss-120b
+  # The environment variable holding the API key (never put the key itself in this file).
+  # Default: OPENAI_API_KEY for openai-compatible, ANTHROPIC_API_KEY for anthropic.
+  api_key_env: GROQ_API_KEY

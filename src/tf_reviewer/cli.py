@@ -1,4 +1,4 @@
-"""Command-line entry point: `tf-reviewer plan.json [--cost-diff infracost.json] [--checkov checkov.json]`."""
+"""Command-line entry point: `tf-reviewer plan.json [--cost-diff infracost.json] [--checkov checkov.json] [--no-llm]`."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 from tf_reviewer.checkov import CheckovError, load_checkov
 from tf_reviewer.config import CONFIG_FILE_NAME, DEFAULT_CONFIG, ConfigError, find_config, load_config
 from tf_reviewer.cost import CostDiffError, load_cost_diff
+from tf_reviewer.llm import LLMError, explain, make_backend
 from tf_reviewer.plan import PlanError, load_plan
 from tf_reviewer.rules import evaluate
 from tf_reviewer.summary import format_cost, format_findings, format_summary
@@ -53,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
         metavar="FILE",
         help="Checkov JSON output for the same plan (`checkov -f plan.json --framework terraform_plan -o json`)",
     )
+    parser.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="don't ask an LLM for explanations, even if the config sets one up (rules-only review)",
+    )
     args = parser.parse_args(argv)
 
     # Plans and Infracost output can contain any Unicode (e.g. "t3.medium → t3.xlarge").
@@ -74,11 +80,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.cost_threshold is not None:
         config = dataclasses.replace(config, cost_threshold=args.cost_threshold)
 
+    findings = evaluate(changes, config=config, cost=cost, checkov=checkov)
+
+    # The LLM only adds explanations. If it fails, the review goes on without them: the
+    # findings, and so the verdict, never depend on it.
+    review = None
+    if not args.no_llm:
+        try:
+            backend = make_backend(config)
+            if backend is not None:
+                review = explain(findings, backend)
+        except LLMError as e:
+            print(f"warning: no AI explanations: {e}", file=sys.stderr)
+
     print(format_summary(changes))
     if cost is not None:
         print(format_cost(cost))
     print()
-    print(format_findings(evaluate(changes, config=config, cost=cost, checkov=checkov)))
+    print(format_findings(findings, review))
     if config_file:
         print(f"\n(settings from {config_file})")
     return 0
