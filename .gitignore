@@ -35,3 +35,4 @@ Thumbs.db
 # Example plans are made fresh in CI
 examples/**/plan.json
 examples/**/.terraform.lock.hcl
+examples/**/infracost.json
