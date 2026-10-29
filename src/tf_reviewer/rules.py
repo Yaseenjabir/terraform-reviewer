@@ -7,6 +7,7 @@ produced it, so each risk level can be traced back to a rule.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ from tf_reviewer.checkov import CheckovFailure
 from tf_reviewer.config import DEFAULT_CONFIG, DEFAULT_COST_THRESHOLD, Config
 from tf_reviewer.cost import CostDiff, format_money
 from tf_reviewer.plan import Action, ResourceChange, format_path
+from tf_reviewer.redact import redact
 
 
 class Risk(IntEnum):
@@ -427,7 +429,9 @@ def evaluate(
 ) -> list[Finding]:
     """Run every rule on every change, plus the cost and Checkov rules if their input is given.
 
-    Rules the config disables are left out. Riskiest findings first, then by address.
+    Rules the config disables are left out, and every finding's text goes through redact(), so
+    no finding can carry a secret to an LLM request or a PR comment. Riskiest findings first,
+    then by address.
     """
     changes = list(changes)
     rules = tuple(rules)
@@ -436,7 +440,11 @@ def evaluate(
         findings += cost_increase(cost, config.cost_threshold)
     if checkov is not None:
         findings += checkov_findings(checkov, changes, config)
-    findings = [f for f in findings if f.rule_id not in config.disabled_rules]
+    findings = [
+        dataclasses.replace(f, address=redact(f.address), message=redact(f.message))
+        for f in findings
+        if f.rule_id not in config.disabled_rules
+    ]
     return sorted(findings, key=lambda f: (-f.risk, f.address, f.rule_id))
 
 
