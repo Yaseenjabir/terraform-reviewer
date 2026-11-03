@@ -113,3 +113,7 @@ The plan has an S3 bucket with every public-access block turned off, a public an
 `checkov.json` is **trimmed** to the fields the reviewer reads (`check_id`, `check_name`, `resource`, `resource_address`, `guideline`) plus the summary. Checkov's full output also contains absolute file paths and code blocks, which were removed.
 
 Scanning the other fixtures with Checkov showed which of its checks repeat the reviewer's own rules (listed in `COVERED_BY_OWN_RULES`), and that Checkov misses several things the reviewer's rules catch on the same plans: RDP opened with `aws_security_group_rule`, PostgreSQL and all-ports-over-IPv6 openings with `aws_vpc_security_group_ingress_rule`, an `ec2:*` inline role policy, and an attached `PowerUserAccess`.
+
+## `provider_schema.json`
+
+A small hand-written file in the format of `terraform providers schema -json`, with two resource types. `aws_security_group` declares `ingress` as an attribute of object type (as the real AWS provider does) and has a nested `timeouts` block, so the tests cover both ways a schema can hold attribute names. The real AWS schema is about 20 MB.

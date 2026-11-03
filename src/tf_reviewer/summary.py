@@ -109,7 +109,8 @@ def format_findings(findings: list[Finding], review: Review | None = None) -> st
         explanation = review.explanations[i] if review is not None else None
         if explanation is not None:
             lines.append(f"{'':10}Why: {explanation.why}")
-            lines.append(f"{'':10}Fix: {explanation.fix}")
+            if explanation.fix:
+                lines.append(f"{'':10}Fix: {explanation.fix}")
     if review is not None:
         lines += ["", f"(explanations written by {review.model}; check them before acting)"]
     return "\n".join(lines)

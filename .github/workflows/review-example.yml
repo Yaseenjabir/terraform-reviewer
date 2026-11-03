@@ -29,6 +29,8 @@ jobs:
           terraform init -input=false
           terraform plan -input=false -refresh=false -out=tfplan
           terraform show -json tfplan > plan.json
+          # Valid attribute names for the AI's fixes (about 20 MB for AWS, so kept out of the repo).
+          terraform providers schema -json > "$RUNNER_TEMP/provider-schema.json"
 
       # Cost: Infracost needs a free API key (the INFRACOST_API_KEY secret). Without it, these
       # steps are skipped and the review runs without cost.
@@ -62,6 +64,7 @@ jobs:
           working-directory: examples/risky
           plan-json: plan.json
           cost-diff: ${{ steps.cost.outputs.diff }}
+          provider-schema: ${{ runner.temp }}/provider-schema.json
           fail-on: never # the example is risky on purpose; real projects keep the default (high)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}

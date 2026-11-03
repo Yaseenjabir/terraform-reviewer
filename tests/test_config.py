@@ -114,7 +114,7 @@ def test_errors_name_the_file(tmp_path):
 
 
 def test_rule_ids_match_the_rules():
-    plans = [load_plan(p) for p in FIXTURES.glob("*.json") if p.name not in ("infracost_diff.json", "checkov.json")]
+    plans = [load_plan(p) for p in FIXTURES.glob("*.json") if p.name not in ("infracost_diff.json", "checkov.json", "provider_schema.json")]
     plans.append([change("aws_s3_bucket.logs", Action.DELETE)])  # no fixture deletes a stateful resource
     # a real plan that turns off DynamoDB point-in-time recovery
     plans.append(load_plan(FIXTURES.parent.parent / "eval" / "cases" / "dynamodb-pitr-disabled" / "plan.json"))

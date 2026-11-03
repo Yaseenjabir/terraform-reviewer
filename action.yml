@@ -21,6 +21,10 @@ inputs:
     description: Path to Checkov JSON output for the same plan.
     required: false
     default: ""
+  provider-schema:
+    description: Path to `terraform providers schema -json` output. With it, AI fixes naming attributes that don't exist are rewritten or dropped.
+    required: false
+    default: ""
   fail-on:
     description: Fail the check if the overall risk is at least this level (high, medium, low or never).
     required: false
@@ -83,6 +87,7 @@ runs:
         CONFIG: ${{ inputs.config }}
         COST_DIFF: ${{ inputs.cost-diff }}
         CHECKOV: ${{ inputs.checkov }}
+        PROVIDER_SCHEMA: ${{ inputs.provider-schema }}
         FAIL_ON: ${{ inputs.fail-on }}
       run: |
         comment_file="$RUNNER_TEMP/tf-reviewer-comment.md"
@@ -90,6 +95,7 @@ runs:
         if [ -n "$CONFIG" ]; then args+=(--config "$CONFIG"); fi
         if [ -n "$COST_DIFF" ]; then args+=(--cost-diff "$COST_DIFF"); fi
         if [ -n "$CHECKOV" ]; then args+=(--checkov "$CHECKOV"); fi
+        if [ -n "$PROVIDER_SCHEMA" ]; then args+=(--provider-schema "$PROVIDER_SCHEMA"); fi
 
         set +e
         "$TF_REVIEWER_BIN/tf-reviewer" "${args[@]}"
