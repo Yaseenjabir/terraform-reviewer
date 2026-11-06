@@ -4,7 +4,11 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 6 in progress: README and MIT license (this step), then a pre-public check (key rotation, history scan), making the repo public, tagging `v1` and the Marketplace listing. Weeks 1-5 are merged. Weeks 1-3 are merged (plan parser, rules, Infracost and Checkov integration, `.tf-reviewer.yml`, secret redaction, LLM explanations, PR comment format).
+**Status:** Released as `v1.0.0` (also tagged `v1`, which moves to each 1.x release). The repo is public. Remaining: the Marketplace listing (done by the owner in the browser: accept the Marketplace developer agreement, then edit the release and tick "Publish this Action to the GitHub Marketplace"). Weeks 1-3 are merged (plan parser, rules, Infracost and Checkov integration, `.tf-reviewer.yml`, secret redaction, LLM explanations, PR comment format).
+
+## Releasing
+
+Tag `vX.Y.Z` on `main` and create a GitHub release for it, then move the major tag so `@v1` users get the update: `git tag -f v1 vX.Y.Z && git push -f origin v1`. Keep `version` in `pyproject.toml` the same as the tag.
 
 ## Commands
 
