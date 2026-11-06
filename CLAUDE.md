@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Week 5 in progress (evaluation suite). Week 4's Action and end-to-end demo are merged; publishing `v1` waits until the repo goes public in Week 6. Weeks 1-3 are merged (plan parser, rules, Infracost and Checkov integration, `.tf-reviewer.yml`, secret redaction, LLM explanations, PR comment format).
+**Status:** Week 6 in progress: README and MIT license (this step), then a pre-public check (key rotation, history scan), making the repo public, tagging `v1` and the Marketplace listing. Weeks 1-5 are merged. Weeks 1-3 are merged (plan parser, rules, Infracost and Checkov integration, `.tf-reviewer.yml`, secret redaction, LLM explanations, PR comment format).
 
 ## Commands
 
