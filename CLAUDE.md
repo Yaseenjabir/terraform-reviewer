@@ -4,7 +4,7 @@ An AI-powered GitHub Action that reviews Terraform pull requests. It reads the `
 
 This is a portfolio project aimed at DevOps/platform/AI engineering roles. It should be built to production quality, with tests, an evaluation suite, a published GitHub Marketplace Action and a README with real benchmark numbers.
 
-**Status:** Released as `v1.0.0` (also tagged `v1`, which moves to each 1.x release). The repo is public. Remaining: the Marketplace listing (done by the owner in the browser: accept the Marketplace developer agreement, then edit the release and tick "Publish this Action to the GitHub Marketplace"). Weeks 1-3 are merged (plan parser, rules, Infracost and Checkov integration, `.tf-reviewer.yml`, secret redaction, LLM explanations, PR comment format).
+**Status:** Released as `v1.0.0` (also tagged `v1`, which moves to each 1.x release). The repo is public. Listed on the GitHub Marketplace (https://github.com/marketplace/actions/terraform-pr-reviewer). To publish a new release there, the owner edits it in the browser and ticks "Publish this Action to the GitHub Marketplace". Weeks 1-3 are merged (plan parser, rules, Infracost and Checkov integration, `.tf-reviewer.yml`, secret redaction, LLM explanations, PR comment format).
 
 ## Releasing
 
